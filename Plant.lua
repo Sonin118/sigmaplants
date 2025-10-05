@@ -2050,6 +2050,72 @@ local SPECIAL_PLANTS = {
     ["Doom-shroom Seed"] = "Mythic"
 }
 
+-- Sementes prioritárias para monitoramento de estoque
+local PRIORITY_SEEDS = {
+    "Shroombino Seed",
+    "Mango Seed", 
+    "Carnivorous Plant Seed",
+    "Mr Carrot Seed",
+    "Tomatrio Seed",
+    "Cocotank Seed",
+    "Watermelon Seed",
+    "Grape Seed"
+}
+
+-- Função para verificar mudanças de estoque
+local function checkStockChanges()
+    if not seedsFrame then return end
+    
+    for _, itemFrame in ipairs(seedsFrame:GetChildren()) do
+        if itemFrame:IsA("Frame") and itemFrame:FindFirstChild("Stock") then
+            local seedName = itemFrame.Name
+            local currentStock = getStock(itemFrame.Stock.Text)
+            
+            -- Verificar se é uma semente prioritária
+            local isPriority = false
+            for _, prioritySeed in ipairs(PRIORITY_SEEDS) do
+                if seedName == prioritySeed then
+                    isPriority = true
+                    break
+                end
+            end
+            
+            if isPriority then
+                local lastStock = lastStockValues[seedName] or 0
+                
+                -- Se o estoque mudou
+                if currentStock ~= lastStock then
+                    local stockChange = currentStock - lastStock
+                    local changeText = ""
+                    
+                    if stockChange > 0 then
+                        changeText = "📈 **Estoque aumentou:** +" .. stockChange
+                    else
+                        changeText = "📉 **Estoque diminuiu:** " .. stockChange
+                    end
+                    
+                    local description = "**" .. seedName .. "** - Mudança de estoque detectada!\n\n"
+                    description = description .. "🏪 **Loja:** Seeds Shop\n"
+                    description = description .. "📦 **Estoque anterior:** x" .. lastStock .. "\n"
+                    description = description .. "📦 **Estoque atual:** x" .. currentStock .. "\n"
+                    description = description .. changeText .. "\n"
+                    description = description .. "🎯 **Auto-Buy:** " .. (AutoBuyEnabled and "Ativo" or "Inativo") .. "\n"
+                    description = description .. "⏰ **Detectado em:** " .. os.date("%H:%M:%S")
+                    
+                    sendWebhook(
+                        "📦 ESTOQUE ATUALIZADO!",
+                        description,
+                        3447003 -- Azul
+                    )
+                end
+                
+                -- Atualizar valor do estoque
+                lastStockValues[seedName] = currentStock
+            end
+        end
+    end
+end
+
 -- Função para verificar plantas secretas/míticas no shop
 local function checkSecretPlants()
     if not seedsFrame then return end
@@ -2100,6 +2166,7 @@ end
 -- Cache para evitar notificações duplicadas
 local lastNotifiedBrainrots = {}
 local lastNotifiedPlants = {}
+local lastStockValues = {} -- Para rastrear mudanças de estoque
 
 -- Função para obter informações detalhadas do brainrot
 local function getBrainrotInfo(brainrot)
@@ -2214,6 +2281,120 @@ task.spawn(function()
     end
 end)
 
+-- Sistema de detecção de estoque em tempo real
+local function setupRealtimeStockDetection()
+    -- Conectar aos eventos de atualização de estoque do jogo
+    local remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
+    
+    -- Evento quando estoque de uma semente específica muda
+    if remotes:FindFirstChild("UpdStock") then
+        remotes.UpdStock.OnClientEvent:Connect(function(seedName)
+            if WEBHOOK_ENABLED and seedsFrame then
+                pcall(function()
+                    -- Verificar se é uma semente prioritária
+                    local isPriority = false
+                    for _, prioritySeed in ipairs(PRIORITY_SEEDS) do
+                        if seedName == prioritySeed then
+                            isPriority = true
+                            break
+                        end
+                    end
+                    
+                    if isPriority then
+                        -- Aguardar um pouco para o estoque ser atualizado
+                        task.wait(0.5)
+                        
+                        local seedFrame = seedsFrame:FindFirstChild(seedName)
+                        if seedFrame and seedFrame:FindFirstChild("Stock") then
+                            local currentStock = getStock(seedFrame.Stock.Text)
+                            local lastStock = lastStockValues[seedName] or 0
+                            
+                            -- Se o estoque mudou
+                            if currentStock ~= lastStock then
+                                local stockChange = currentStock - lastStock
+                                local changeText = ""
+                                
+                                if stockChange > 0 then
+                                    changeText = "📈 **Estoque aumentou:** +" .. stockChange
+                                else
+                                    changeText = "📉 **Estoque diminuiu:** " .. stockChange
+                                end
+                                
+                                local description = "**" .. seedName .. "** - Mudança de estoque detectada!\n\n"
+                                description = description .. "🏪 **Loja:** Seeds Shop\n"
+                                description = description .. "📦 **Estoque anterior:** x" .. lastStock .. "\n"
+                                description = description .. "📦 **Estoque atual:** x" .. currentStock .. "\n"
+                                description = description .. changeText .. "\n"
+                                description = description .. "🎯 **Auto-Buy:** " .. (AutoBuyEnabled and "Ativo" or "Inativo") .. "\n"
+                                description = description .. "⏰ **Detectado em:** " .. os.date("%H:%M:%S") .. " (TEMPO REAL!)"
+                                
+                                sendWebhook(
+                                    "⚡ ESTOQUE ATUALIZADO EM TEMPO REAL!",
+                                    description,
+                                    3447003 -- Azul
+                                )
+                            end
+                            
+                            -- Atualizar valor do estoque
+                            lastStockValues[seedName] = currentStock
+                        end
+                    end
+                end)
+            end
+        end)
+    end
+    
+    -- Evento quando todos os estoques de plantas são atualizados
+    if remotes:FindFirstChild("UpdatePlantStocks") then
+        remotes.UpdatePlantStocks.OnClientEvent:Connect(function()
+            if WEBHOOK_ENABLED and seedsFrame then
+                pcall(function()
+                    -- Verificar todas as sementes prioritárias
+                    for _, seedName in ipairs(PRIORITY_SEEDS) do
+                        local seedFrame = seedsFrame:FindFirstChild(seedName)
+                        if seedFrame and seedFrame:FindFirstChild("Stock") then
+                            local currentStock = getStock(seedFrame.Stock.Text)
+                            local lastStock = lastStockValues[seedName] or 0
+                            
+                            -- Se o estoque mudou
+                            if currentStock ~= lastStock then
+                                local stockChange = currentStock - lastStock
+                                local changeText = ""
+                                
+                                if stockChange > 0 then
+                                    changeText = "📈 **Estoque aumentou:** +" .. stockChange
+                                else
+                                    changeText = "📉 **Estoque diminuiu:** " .. stockChange
+                                end
+                                
+                                local description = "**" .. seedName .. "** - Mudança de estoque detectada!\n\n"
+                                description = description .. "🏪 **Loja:** Seeds Shop\n"
+                                description = description .. "📦 **Estoque anterior:** x" .. lastStock .. "\n"
+                                description = description .. "📦 **Estoque atual:** x" .. currentStock .. "\n"
+                                description = description .. changeText .. "\n"
+                                description = description .. "🎯 **Auto-Buy:** " .. (AutoBuyEnabled and "Ativo" or "Inativo") .. "\n"
+                                description = description .. "⏰ **Detectado em:** " .. os.date("%H:%M:%S") .. " (RESTOCK GERAL!)"
+                                
+                                sendWebhook(
+                                    "🔄 RESTOCK GERAL DETECTADO!",
+                                    description,
+                                    16776960 -- Amarelo
+                                )
+                            end
+                            
+                            -- Atualizar valor do estoque
+                            lastStockValues[seedName] = currentStock
+                        end
+                    end
+                end)
+            end
+        end)
+    end
+end
+
+-- Configurar detecção em tempo real
+setupRealtimeStockDetection()
+
 -- Nova aba de Webhook
 local WebhookTab = Window:CreateTab("Discord Webhook")
 
@@ -2317,6 +2498,37 @@ WebhookTab:CreateButton({
             showNotification("Teste", "Notificação detalhada enviada com sucesso!")
         else
             showNotification("Erro", "Falha ao enviar notificação detalhada!")
+        end
+    end
+})
+
+WebhookTab:CreateButton({
+    Name = "Testar Monitoramento de Estoque",
+    Callback = function()
+        if WEBHOOK_URL == "" then
+            showNotification("Erro", "Configure a URL do webhook primeiro!")
+            return
+        end
+        
+        -- Simular notificação de mudança de estoque em tempo real
+        local description = "**Shroombino Seed** - Mudança de estoque detectada!\n\n"
+        description = description .. "🏪 **Loja:** Seeds Shop\n"
+        description = description .. "📦 **Estoque anterior:** x0\n"
+        description = description .. "📦 **Estoque atual:** x5\n"
+        description = description .. "📈 **Estoque aumentou:** +5\n"
+        description = description .. "🎯 **Auto-Buy:** Ativo\n"
+        description = description .. "⏰ **Detectado em:** " .. os.date("%H:%M:%S") .. " (TEMPO REAL!)"
+        
+        local success = sendWebhook(
+            "⚡ ESTOQUE ATUALIZADO EM TEMPO REAL!",
+            description,
+            3447003 -- Azul
+        )
+        
+        if success then
+            showNotification("Teste", "Notificação de estoque enviada com sucesso!")
+        else
+            showNotification("Erro", "Falha ao enviar notificação de estoque!")
         end
     end
 })
@@ -2435,6 +2647,16 @@ WebhookTab:CreateSection("🎯 Foco em Raridades")
 WebhookTab:CreateLabel("• Apenas Brainrots SECRET e LIMITED")
 WebhookTab:CreateLabel("• Plantas Secretas/Godly e Míticas/Legendárias")
 WebhookTab:CreateLabel("• Notificações otimizadas e detalhadas")
+
+WebhookTab:CreateSection("📦 Monitoramento de Estoque")
+WebhookTab:CreateLabel("⚡ DETECÇÃO EM TEMPO REAL!")
+WebhookTab:CreateLabel("• Conectado aos eventos do jogo")
+WebhookTab:CreateLabel("• Notifica INSTANTANEAMENTE quando muda")
+WebhookTab:CreateLabel("• Sementes prioritárias monitoradas:")
+WebhookTab:CreateLabel("  - Shroombino, Mango, Carnivorous Plant")
+WebhookTab:CreateLabel("  - Mr Carrot, Tomatrio, Cocotank")
+WebhookTab:CreateLabel("  - Watermelon, Grape")
+WebhookTab:CreateLabel("• Eventos: UpdStock + UpdatePlantStocks")
 
 WebhookTab:CreateButton({
     Name = "Ver Notificações Salvas",
