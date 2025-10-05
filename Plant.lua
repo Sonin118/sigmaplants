@@ -2116,7 +2116,7 @@ local function checkStockChanges()
     end
 end
 
--- Função para verificar plantas secretas/míticas no shop
+-- Função para verificar plantas secretas/míticas no shop (APENAS as específicas)
 local function checkSecretPlants()
     if not seedsFrame then return end
     
@@ -2125,39 +2125,31 @@ local function checkSecretPlants()
             local seedName = itemFrame.Name
             local stock = getStock(itemFrame.Stock.Text)
             
-            -- Verificar se é uma planta especial
-            if stock > 0 and SPECIAL_PLANTS[seedName] then
-                local plantType = SPECIAL_PLANTS[seedName]
-                
-                if plantType == "Secret" and NOTIFY_SECRET_PLANTS then
-                    local description = "**" .. seedName .. "** está disponível no shop!\n\n"
-                    description = description .. "🏪 **Loja:** Seeds Shop\n"
-                    description = description .. "📦 **Estoque:** x" .. stock .. "\n"
-                    description = description .. "⭐ **Raridade:** Secret/Godly\n"
-                    description = description .. "💰 **Auto-Buy:** Ativo\n"
-                    description = description .. "🕐 **Detectado em:** " .. os.date("%H:%M:%S") .. "\n\n"
-                    description = description .. "⚡ **Corra para comprar antes que acabe!**"
-                    
-                    sendWebhook(
-                        "🌱 PLANTA SECRETA DISPONÍVEL!",
-                        description,
-                        16711680 -- Vermelho
-                    )
-                elseif plantType == "Mythic" and NOTIFY_MYTHIC_PLANTS then
-                    local description = "**" .. seedName .. "** está disponível no shop!\n\n"
-                    description = description .. "🏪 **Loja:** Seeds Shop\n"
-                    description = description .. "📦 **Estoque:** x" .. stock .. "\n"
-                    description = description .. "⭐ **Raridade:** Mythic/Legendary\n"
-                    description = description .. "💰 **Auto-Buy:** Ativo\n"
-                    description = description .. "🕐 **Detectado em:** " .. os.date("%H:%M:%S") .. "\n\n"
-                    description = description .. "⚡ **Corra para comprar antes que acabe!**"
-                    
-                    sendWebhook(
-                        "🌿 PLANTA MÍTICA DISPONÍVEL!",
-                        description,
-                        16776960 -- Amarelo
-                    )
+            -- Verificar se é uma das sementes específicas da lista
+            local isInSpecificList = false
+            for _, specificSeed in ipairs(PRIORITY_SEEDS) do
+                if seedName == specificSeed then
+                    isInSpecificList = true
+                    break
                 end
+            end
+            
+            -- Só notificar se estiver na lista específica e tiver estoque
+            if stock > 0 and isInSpecificList then
+                local description = "**" .. seedName .. "** está disponível no shop!\n\n"
+                description = description .. "🏪 **Loja:** Seeds Shop\n"
+                description = description .. "📦 **Estoque:** x" .. stock .. "\n"
+                description = description .. "⭐ **Raridade:** Especial\n"
+                description = description .. "💰 **Auto-Buy:** " .. (AutoBuyEnabled and "Ativo" or "Inativo") .. "\n"
+                description = description .. "🕐 **Detectado em:** " .. os.date("%H:%M:%S") .. "\n\n"
+                description = description .. "⚡ **Corra para comprar antes que acabe!**"
+                
+                sendWebhook(
+                    "🌱 SEMENTE ESPECIAL DISPONÍVEL!",
+                    description,
+                    16711680 -- Vermelho
+                )
+            end
             end
         end
     end
@@ -2582,27 +2574,15 @@ WebhookTab:CreateButton({
 })
 
 WebhookTab:CreateSection("Notificações de Plantas")
-WebhookTab:CreateToggle({
-    Name = "Notificar Plantas Secretas/Godly",
-    CurrentValue = NOTIFY_SECRET_PLANTS,
-    Flag = "NotifySecretPlantsToggle",
-    Callback = function(value)
-        NOTIFY_SECRET_PLANTS = value
-        showNotification("Webhook", "Notificação de plantas secretas " .. (value and "ativada" or "desativada") .. "!")
-        saveWebhookSettings() -- Salvar configurações automaticamente
-    end
-})
-
-WebhookTab:CreateToggle({
-    Name = "Notificar Plantas Míticas/Legendárias",
-    CurrentValue = NOTIFY_MYTHIC_PLANTS,
-    Flag = "NotifyMythicPlantsToggle",
-    Callback = function(value)
-        NOTIFY_MYTHIC_PLANTS = value
-        showNotification("Webhook", "Notificação de plantas míticas " .. (value and "ativada" or "desativada") .. "!")
-        saveWebhookSettings() -- Salvar configurações automaticamente
-    end
-})
+WebhookTab:CreateLabel("🌱 Sementes Monitoradas:")
+WebhookTab:CreateLabel("• Shroombino Seed")
+WebhookTab:CreateLabel("• Mango Seed")
+WebhookTab:CreateLabel("• Carnivorous Plant Seed")
+WebhookTab:CreateLabel("• Mr Carrot Seed")
+WebhookTab:CreateLabel("• Tomatrio Seed")
+WebhookTab:CreateLabel("• Cocotank Seed")
+WebhookTab:CreateLabel("• Watermelon Seed")
+WebhookTab:CreateLabel("• Grape Seed")
 
 WebhookTab:CreateSection("Notificações de Brainrots")
 WebhookTab:CreateToggle({
@@ -2643,9 +2623,10 @@ WebhookTab:CreateLabel("• Alguns executores bloqueiam HTTP")
 WebhookTab:CreateLabel("• Notificações são salvas automaticamente")
 WebhookTab:CreateLabel("• Tente usar webhook externo (veja abaixo)")
 
-WebhookTab:CreateSection("🎯 Foco em Raridades")
+WebhookTab:CreateSection("🎯 Foco Específico")
 WebhookTab:CreateLabel("• Apenas Brainrots SECRET e LIMITED")
-WebhookTab:CreateLabel("• Plantas Secretas/Godly e Míticas/Legendárias")
+WebhookTab:CreateLabel("• APENAS as 8 sementes específicas da lista")
+WebhookTab:CreateLabel("• Não notifica outras plantas")
 WebhookTab:CreateLabel("• Notificações otimizadas e detalhadas")
 
 WebhookTab:CreateSection("📦 Monitoramento de Estoque")
