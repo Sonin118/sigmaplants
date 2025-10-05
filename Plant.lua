@@ -1747,6 +1747,44 @@ local NOTIFY_MYTHIC_PLANTS = true
 local NOTIFY_SECRET_BRAINROTS = true
 local NOTIFY_LIMITED_BRAINROTS = true
 
+-- Função para salvar configurações do webhook
+local function saveWebhookSettings()
+    local settings = {
+        WEBHOOK_ENABLED = WEBHOOK_ENABLED,
+        NOTIFY_SECRET_PLANTS = NOTIFY_SECRET_PLANTS,
+        NOTIFY_MYTHIC_PLANTS = NOTIFY_MYTHIC_PLANTS,
+        NOTIFY_SECRET_BRAINROTS = NOTIFY_SECRET_BRAINROTS,
+        NOTIFY_LIMITED_BRAINROTS = NOTIFY_LIMITED_BRAINROTS
+    }
+    
+    local success, errorMsg = pcall(function()
+        writefile("PlantsVsBrainrot_WebhookSettings.json", game:GetService("HttpService"):JSONEncode(settings))
+    end)
+    
+    if not success then
+        print("Erro ao salvar configurações do webhook: " .. tostring(errorMsg))
+    end
+end
+
+-- Função para carregar configurações do webhook
+local function loadWebhookSettings()
+    if isfile("PlantsVsBrainrot_WebhookSettings.json") then
+        local success, settings = pcall(function()
+            return game:GetService("HttpService"):JSONDecode(readfile("PlantsVsBrainrot_WebhookSettings.json"))
+        end)
+        
+        if success and settings then
+            WEBHOOK_ENABLED = settings.WEBHOOK_ENABLED or false
+            NOTIFY_SECRET_PLANTS = settings.NOTIFY_SECRET_PLANTS or true
+            NOTIFY_MYTHIC_PLANTS = settings.NOTIFY_MYTHIC_PLANTS or true
+            NOTIFY_SECRET_BRAINROTS = settings.NOTIFY_SECRET_BRAINROTS or true
+            NOTIFY_LIMITED_BRAINROTS = settings.NOTIFY_LIMITED_BRAINROTS or true
+            return true
+        end
+    end
+    return false
+end
+
 -- Função para enviar webhook usando método alternativo
 local function sendWebhook(title, description, color)
     if not WEBHOOK_ENABLED or WEBHOOK_URL == "" then
@@ -2134,6 +2172,7 @@ WebhookTab:CreateToggle({
             WEBHOOK_ENABLED = false
         else
             showNotification("Webhook", "Webhook " .. (value and "ativado" or "desativado") .. "!")
+            saveWebhookSettings() -- Salvar configurações automaticamente
         end
     end
 })
@@ -2269,6 +2308,7 @@ WebhookTab:CreateToggle({
     Callback = function(value)
         NOTIFY_SECRET_PLANTS = value
         showNotification("Webhook", "Notificação de plantas secretas " .. (value and "ativada" or "desativada") .. "!")
+        saveWebhookSettings() -- Salvar configurações automaticamente
     end
 })
 
@@ -2279,6 +2319,7 @@ WebhookTab:CreateToggle({
     Callback = function(value)
         NOTIFY_MYTHIC_PLANTS = value
         showNotification("Webhook", "Notificação de plantas míticas " .. (value and "ativada" or "desativada") .. "!")
+        saveWebhookSettings() -- Salvar configurações automaticamente
     end
 })
 
@@ -2290,6 +2331,7 @@ WebhookTab:CreateToggle({
     Callback = function(value)
         NOTIFY_SECRET_BRAINROTS = value
         showNotification("Webhook", "Notificação de brainrots secretos " .. (value and "ativada" or "desativada") .. "!")
+        saveWebhookSettings() -- Salvar configurações automaticamente
     end
 })
 
@@ -2300,6 +2342,7 @@ WebhookTab:CreateToggle({
     Callback = function(value)
         NOTIFY_LIMITED_BRAINROTS = value
         showNotification("Webhook", "Notificação de brainrots limitados " .. (value and "ativada" or "desativada") .. "!")
+        saveWebhookSettings() -- Salvar configurações automaticamente
     end
 })
 
@@ -2310,6 +2353,7 @@ WebhookTab:CreateToggle({
     Callback = function(value)
         NOTIFY_SECRET_BRAINROTS = value
         showNotification("Webhook", "Notificação de todas as raridades " .. (value and "ativada" or "desativada") .. "!")
+        saveWebhookSettings() -- Salvar configurações automaticamente
     end
 })
 
@@ -2348,6 +2392,19 @@ WebhookTab:CreateButton({
     Callback = function()
         savedNotifications = {}
         showNotification("Notificações", "Notificações salvas limpas!")
+    end
+})
+
+WebhookTab:CreateButton({
+    Name = "Resetar Configurações",
+    Callback = function()
+        WEBHOOK_ENABLED = false
+        NOTIFY_SECRET_PLANTS = true
+        NOTIFY_MYTHIC_PLANTS = true
+        NOTIFY_SECRET_BRAINROTS = true
+        NOTIFY_LIMITED_BRAINROTS = true
+        saveWebhookSettings()
+        showNotification("Reset", "Configurações do webhook resetadas!")
     end
 })
 
@@ -2410,20 +2467,24 @@ sendNotification("🔥 BRAINROT SECRETO!", "Matteo detectado no mapa!")
     end
 })
 
+-- Carregar configurações do webhook
+loadWebhookSettings()
+
 -- Carregar URL salva do webhook
 if isfile("PlantsVsBrainrot_WebhookURL.txt") then
     WEBHOOK_URL = readfile("PlantsVsBrainrot_WebhookURL.txt")
     if WEBHOOK_URL ~= "" then
         showNotification("Webhook", "URL do webhook carregada automaticamente!")
-        WEBHOOK_ENABLED = true
         
-        -- Notificar inicialização do script
-        task.wait(3) -- Aguardar 3 segundos para tudo carregar
-        sendWebhook(
-            "🚀 SONINHUB v2.0 INICIADO!",
-            "**SoninHub v2.0** foi iniciado com sucesso!\n\n✅ Auto-Buy: Ativo\n✅ Combat: Ativo\n✅ Anti-Lag: Ativo\n✅ Anti-AFK: Ativo\n✅ Webhook: Conectado\n\n🎯 Monitorando plantas secretas e brainrots especiais!",
-            3447003 -- Azul
-        )
+        -- Notificar inicialização do script apenas se webhook estiver ativo
+        if WEBHOOK_ENABLED then
+            task.wait(3) -- Aguardar 3 segundos para tudo carregar
+            sendWebhook(
+                "🚀 SONINHUB v2.0 INICIADO!",
+                "**SoninHub v2.0** foi iniciado com sucesso!\n\n✅ Auto-Buy: Ativo\n✅ Combat: Ativo\n✅ Anti-Lag: Ativo\n✅ Anti-AFK: Ativo\n✅ Webhook: Conectado\n\n🎯 Monitorando plantas secretas e brainrots especiais!",
+                3447003 -- Azul
+            )
+        end
     end
 end
 
