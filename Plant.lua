@@ -189,64 +189,123 @@ task.spawn(function()
     end
 end)
 
--- Aguardar o PlayerGui carregar
-local playerGui = player:WaitForChild("PlayerGui", 10)
-if not playerGui then
-    error("PlayerGui não encontrado!")
+-- Aguardar o PlayerGui carregar com verificação de segurança
+local playerGui
+local success, errorMsg = pcall(function()
+    playerGui = player:WaitForChild("PlayerGui", 10)
+end)
+
+if not success or not playerGui then
+    print("Erro: PlayerGui não encontrado - " .. tostring(errorMsg))
+    print("Tentando aguardar mais tempo...")
+    playerGui = player:WaitForChild("PlayerGui", 30) -- Aguardar mais tempo
+    if not playerGui then
+        print("PlayerGui não encontrado após 30 segundos!")
+        print("Continuando sem PlayerGui...")
+        -- Continuar mesmo sem PlayerGui
+    end
 end
 
 -- Tentar PlayerGui primeiro, depois StarterGui
-local mainGui = playerGui:FindFirstChild("Main")
-if not mainGui then
+local mainGui
+if playerGui then
+    mainGui = playerGui:FindFirstChild("Main")
+    if not mainGui then
+        local starterGui = game:GetService("StarterGui")
+        mainGui = starterGui:FindFirstChild("Main")
+        if not mainGui then
+            print("Erro: Main GUI não encontrado em PlayerGui nem StarterGui!")
+            print("Aguardando Main GUI aparecer...")
+            task.wait(5)
+            if playerGui then
+                mainGui = playerGui:WaitForChild("Main", 30)
+            end
+            if not mainGui then
+                print("Main GUI ainda não encontrado, tentando StarterGui...")
+                mainGui = starterGui:WaitForChild("Main", 30)
+            end
+        else
+            print("Main GUI encontrado em StarterGui")
+        end
+    else
+        print("Main GUI encontrado em PlayerGui")
+    end
+else
+    print("PlayerGui não disponível, tentando StarterGui...")
     local starterGui = game:GetService("StarterGui")
     mainGui = starterGui:FindFirstChild("Main")
     if not mainGui then
-        error("Main GUI não encontrado em PlayerGui nem StarterGui!")
-    else
-        -- Main GUI encontrado em StarterGui
+        print("Main GUI não encontrado em StarterGui também!")
+        -- Continuar sem Main GUI
     end
-else
-    -- Main GUI encontrado em PlayerGui
 end
 
-local seedsGui = mainGui:FindFirstChild("Seeds")
-if not seedsGui then
-    error("Seeds GUI não encontrado!")
-end
+local seedsGui
+local gearsGui
 
-local gearsGui = mainGui:FindFirstChild("Gears")
-if not gearsGui then
-    error("Gears GUI não encontrado!")
-end
-
-local seedsFrame = seedsGui:FindFirstChild("Frame")
-if seedsFrame then
-    seedsFrame = seedsFrame:FindFirstChild("ScrollingFrame")
-    if not seedsFrame then
-        -- Seeds ScrollingFrame não encontrado
+if mainGui then
+    seedsGui = mainGui:FindFirstChild("Seeds")
+    if not seedsGui then
+        print("Seeds GUI não encontrado, aguardando...")
+        seedsGui = mainGui:WaitForChild("Seeds", 30)
+        if not seedsGui then
+            print("Seeds GUI não encontrado após 30 segundos!")
+            -- Continuar sem Seeds GUI
+        end
     end
-else
-    -- Seeds Frame não encontrado
-end
 
-local gearsFrame = gearsGui:FindFirstChild("Frame")
-if gearsFrame then
-    gearsFrame = gearsFrame:FindFirstChild("ScrollingFrame")
-    if not gearsFrame then
-        -- Gears ScrollingFrame não encontrado
-        -- Tentar procurar diretamente no gearsGui
-        gearsFrame = gearsGui:FindFirstChild("ScrollingFrame")
-        if gearsFrame then
-            -- Gears ScrollingFrame encontrado diretamente
+    gearsGui = mainGui:FindFirstChild("Gears")
+    if not gearsGui then
+        print("Gears GUI não encontrado, aguardando...")
+        gearsGui = mainGui:WaitForChild("Gears", 30)
+        if not gearsGui then
+            print("Gears GUI não encontrado após 30 segundos!")
+            -- Continuar sem Gears GUI
         end
     end
 else
-    -- Gears Frame não encontrado
-    -- Tentar procurar diretamente no gearsGui
-    gearsFrame = gearsGui:FindFirstChild("ScrollingFrame")
-    if gearsFrame then
-        -- Gears ScrollingFrame encontrado diretamente
+    print("Main GUI não disponível, continuando sem GUIs...")
+end
+
+local seedsFrame
+local gearsFrame
+
+if seedsGui then
+    local seedsFrameParent = seedsGui:FindFirstChild("Frame")
+    if seedsFrameParent then
+        seedsFrame = seedsFrameParent:FindFirstChild("ScrollingFrame")
+        if not seedsFrame then
+            print("Seeds ScrollingFrame não encontrado")
+        end
+    else
+        print("Seeds Frame não encontrado")
     end
+else
+    print("SeedsGui não disponível")
+end
+
+if gearsGui then
+    local gearsFrameParent = gearsGui:FindFirstChild("Frame")
+    if gearsFrameParent then
+        gearsFrame = gearsFrameParent:FindFirstChild("ScrollingFrame")
+        if not gearsFrame then
+            print("Gears ScrollingFrame não encontrado")
+            -- Tentar procurar diretamente no gearsGui
+            gearsFrame = gearsGui:FindFirstChild("ScrollingFrame")
+            if gearsFrame then
+                print("Gears ScrollingFrame encontrado diretamente")
+            end
+        end
+    else
+        print("Gears Frame não encontrado")
+        -- Tentar procurar diretamente no gearsGui
+        gearsFrame = gearsGui:FindFirstChild("ScrollingFrame")
+        if gearsFrame then
+            print("Gears ScrollingFrame encontrado diretamente")
+        end
+    end
+else
+    print("GearsGui não disponível")
 end
 
 -- Aguardar os remotes com timeout
@@ -257,19 +316,27 @@ local buyItemRemote
 local equipBestBrainrotsRemote
 
 pcall(function()
-    local bridgeNet2 = ReplicatedStorage:WaitForChild("BridgeNet2", 10)
+    local bridgeNet2 = ReplicatedStorage:WaitForChild("BridgeNet2", 15)
     if bridgeNet2 then
-        dataRemoteEvent = bridgeNet2:WaitForChild("dataRemoteEvent", 5)
+        dataRemoteEvent = bridgeNet2:WaitForChild("dataRemoteEvent", 10)
+        if dataRemoteEvent then
+            print("DataRemoteEvent encontrado!")
+        end
     end
 end)
 
 pcall(function()
-    local remotes = ReplicatedStorage:WaitForChild("Remotes", 10)
+    local remotes = ReplicatedStorage:WaitForChild("Remotes", 15)
     if remotes then
-        useItemRemote = remotes:WaitForChild("UseItem", 5)
-        buyGearRemote = remotes:WaitForChild("BuyGear", 5)
-        buyItemRemote = remotes:WaitForChild("BuyItem", 5)
-        equipBestBrainrotsRemote = remotes:WaitForChild("EquipBestBrainrots", 5)
+        useItemRemote = remotes:WaitForChild("UseItem", 10)
+        buyGearRemote = remotes:WaitForChild("BuyGear", 10)
+        buyItemRemote = remotes:WaitForChild("BuyItem", 10)
+        equipBestBrainrotsRemote = remotes:WaitForChild("EquipBestBrainrots", 10)
+        
+        if useItemRemote then print("UseItem remote encontrado!") end
+        if buyGearRemote then print("BuyGear remote encontrado!") end
+        if buyItemRemote then print("BuyItem remote encontrado!") end
+        if equipBestBrainrotsRemote then print("EquipBestBrainrots remote encontrado!") end
     end
 end)
 
@@ -403,6 +470,9 @@ end
 local savedConfigs = loadSavedConfigs()
 
 local function getStock(text)
+    if not text or type(text) ~= "string" then
+        return 0
+    end
     local amount = text:match("x(%d+)")
     return tonumber(amount) or 0
 end
@@ -469,23 +539,57 @@ local function buyItem(itemName, amount, isSeed)
     end
 end
 
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-local humanoid = character:WaitForChild("Humanoid")
-
-local plotsFolder = Workspace:WaitForChild("Plots")
-local myPlot
-for _, plot in ipairs(plotsFolder:GetChildren()) do
-    if plot:GetAttribute("Owner") == player.Name then
-        myPlot = plot
-        break
+local character = player.Character
+if not character then
+    print("Character não encontrado, aguardando...")
+    character = player.CharacterAdded:Wait(30)
+    if not character then
+        print("Character não encontrado após 30 segundos!")
+        -- Continuar sem character
     end
 end
-if not myPlot then return end
+
+local hrp
+local humanoid
+local myPlot
+
+if character then
+    hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then
+        hrp = character:WaitForChild("HumanoidRootPart", 10)
+        if not hrp then
+            print("HumanoidRootPart não encontrado!")
+        end
+    end
+    
+    humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then
+        humanoid = character:WaitForChild("Humanoid", 10)
+        if not humanoid then
+            print("Humanoid não encontrado!")
+        end
+    end
+end
+
+local plotsFolder = Workspace:FindFirstChild("Plots")
+if plotsFolder then
+    for _, plot in ipairs(plotsFolder:GetChildren()) do
+        if plot:GetAttribute("Owner") == player.Name then
+            myPlot = plot
+            break
+        end
+    end
+    if not myPlot then
+        print("Plot do jogador não encontrado!")
+        -- Continuar sem plot
+    end
+else
+    print("Plots folder não encontrado!")
+end
 
 local tierModel
 local highestTier = 0
-if myPlot:FindFirstChild("Other") then
+if myPlot and myPlot:FindFirstChild("Other") then
     for _, candidate in ipairs(myPlot.Other:GetChildren()) do
         local tierNum = candidate.Name:match("^Tier(%d+)$")
         if tierNum then
@@ -497,13 +601,28 @@ if myPlot:FindFirstChild("Other") then
         end
     end
 end
-if not tierModel then return end
+if not tierModel then
+    print("TierModel não encontrado!")
+    -- Continuar sem tierModel
+end
 
-local roadModel = tierModel:FindFirstChild("Road")
-if not roadModel then return end
+local roadModel
 local roadParts = {}
-for _, p in ipairs(roadModel:GetDescendants()) do
-    if p:IsA("BasePart") then table.insert(roadParts,p) end
+
+if tierModel then
+    roadModel = tierModel:FindFirstChild("Road")
+    if roadModel then
+        for _, p in ipairs(roadModel:GetDescendants()) do
+            if p:IsA("BasePart") then 
+                table.insert(roadParts, p) 
+            end
+        end
+        print("Road parts encontrados: " .. #roadParts)
+    else
+        print("Road model não encontrado!")
+    end
+else
+    print("TierModel não disponível para road!")
 end
 
 local Clip = true
@@ -694,6 +813,11 @@ local FIRE_INTERVAL = 2
 
 local function findTargetBrainrot(selectedRarities)
     if not brainrotsFolder then
+        return nil
+    end
+    
+    if not roadParts or #roadParts == 0 then
+        print("Road parts não disponíveis para detecção!")
         return nil
     end
     
@@ -1863,7 +1987,7 @@ end
 
 -- Função para enviar webhook usando método alternativo
 local function sendWebhook(title, description, color)
-    if not WEBHOOK_ENABLED or WEBHOOK_URL == "" then
+    if not WEBHOOK_ENABLED or WEBHOOK_URL == "" or not title or not description then
         return false
     end
     
@@ -1906,24 +2030,28 @@ local function sendWebhook(title, description, color)
             return response.StatusCode == 200 or response.StatusCode == 204
         end
         
-        -- Método 3: Usar HttpService (pode não funcionar)
-        local http = game:GetService("HttpService")
-        local payload = {
-            username = "SoninHub Bot",
-            content = "**" .. title .. "**\n\n" .. description .. "\n\n*SoninHub v2.0 - Plants vs Brainrot*"
-        }
-        
-        local jsonPayload = http:JSONEncode(payload)
-        local response = http:RequestAsync({
-            Url = WEBHOOK_URL,
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json"
-            },
-            Body = jsonPayload
-        })
-        
-        return response.Success
+                -- Método 3: Usar HttpService (pode não funcionar)
+                local http = game:GetService("HttpService")
+                if not http or not http.JSONEncode or not http.RequestAsync then
+                    return false
+                end
+                
+                local payload = {
+                    username = "SoninHub Bot",
+                    content = "**" .. title .. "**\n\n" .. description .. "\n\n*SoninHub v2.0 - Plants vs Brainrot*"
+                }
+                
+                local jsonPayload = http:JSONEncode(payload)
+                local response = http:RequestAsync({
+                    Url = WEBHOOK_URL,
+                    Method = "POST",
+                    Headers = {
+                        ["Content-Type"] = "application/json"
+                    },
+                    Body = jsonPayload
+                })
+                
+                return response and response.Success
     end)
     
     if not success then
@@ -2276,12 +2404,20 @@ end)
 -- Sistema de detecção de estoque em tempo real
 local function setupRealtimeStockDetection()
     -- Conectar aos eventos de atualização de estoque do jogo
-    local remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
+    local success, remotes = pcall(function()
+        return game:GetService("ReplicatedStorage"):WaitForChild("Remotes", 10)
+    end)
+    
+    if not success or not remotes then
+        print("Erro: Não foi possível encontrar Remotes no ReplicatedStorage")
+        return
+    end
     
     -- Evento quando estoque de uma semente específica muda
-    if remotes:FindFirstChild("UpdStock") then
-        remotes.UpdStock.OnClientEvent:Connect(function(seedName)
-            if WEBHOOK_ENABLED and seedsFrame then
+    local updStockRemote = remotes:FindFirstChild("UpdStock")
+    if updStockRemote and updStockRemote.OnClientEvent then
+        updStockRemote.OnClientEvent:Connect(function(seedName)
+            if WEBHOOK_ENABLED and seedsFrame and seedName then
                 pcall(function()
                     -- Verificar se é uma semente prioritária
                     local isPriority = false
@@ -2337,8 +2473,9 @@ local function setupRealtimeStockDetection()
     end
     
     -- Evento quando todos os estoques de plantas são atualizados
-    if remotes:FindFirstChild("UpdatePlantStocks") then
-        remotes.UpdatePlantStocks.OnClientEvent:Connect(function()
+    local updatePlantStocksRemote = remotes:FindFirstChild("UpdatePlantStocks")
+    if updatePlantStocksRemote and updatePlantStocksRemote.OnClientEvent then
+        updatePlantStocksRemote.OnClientEvent:Connect(function()
             if WEBHOOK_ENABLED and seedsFrame then
                 pcall(function()
                     -- Verificar todas as sementes prioritárias
@@ -2384,8 +2521,10 @@ local function setupRealtimeStockDetection()
     end
 end
 
--- Configurar detecção em tempo real
-setupRealtimeStockDetection()
+-- Configurar detecção em tempo real com verificação de segurança
+pcall(function()
+    setupRealtimeStockDetection()
+end)
 
 -- Nova aba de Webhook
 local WebhookTab = Window:CreateTab("Discord Webhook")
