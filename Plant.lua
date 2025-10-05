@@ -180,10 +180,12 @@ end
 -- APLICAR ANTI-LAG AGORA MESMO
 applyImmediateAntiLag()
 
--- Loop para monitorar novos brainrots e torná-los invisíveis
+-- Loop para monitorar novos brainrots e torná-los invisíveis (otimizado)
 task.spawn(function()
-    while task.wait(1) do -- Verificar a cada 1 segundo
-        hideAllBrainrots()
+    while task.wait(5) do -- Verificar a cada 5 segundos (reduzido)
+        pcall(function()
+            hideAllBrainrots()
+        end)
     end
 end)
 
@@ -922,32 +924,26 @@ CombatTab:CreateSlider({
     end
 })
 
--- Loop para coletar dinheiro automaticamente (equipar melhores brainrots)
+-- Loop para coletar dinheiro automaticamente (equipar melhores brainrots) - otimizado
 task.spawn(function()
     while task.wait(COLLECT_MONEY_COOLDOWN) do -- A cada 300 segundos (5 minutos)
         if AUTO_COLLECT_MONEY and equipBestBrainrotsRemote then
-            print("💰 Coletando dinheiro automaticamente...")
-            local success, errorMsg = pcall(function()
+            -- Coletando dinheiro automaticamente
+            pcall(function()
                 equipBestBrainrotsRemote:FireServer()
-            end)
-            
-            if success then
-                print("✅ Dinheiro coletado com sucesso!")
                 showNotification("Collect Money", "Dinheiro coletado automaticamente!")
-            else
-                print("❌ Erro ao coletar dinheiro: " .. tostring(errorMsg))
-            end
+            end)
         end
     end
 end)
 
 task.spawn(function()
     while task.wait(BUY_DELAY) do
-        if AutoBuyEnabled then
+        if AutoBuyEnabled and seedsFrame and gearsFrame then
             -- Auto-Buy ativo - verificando itens
-            
-            -- Comprar sementes
-            for _, seedName in ipairs(SelectedSeeds) do
+            pcall(function()
+                -- Comprar sementes
+                for _, seedName in ipairs(SelectedSeeds) do
                 local seedFrame = seedsFrame:FindFirstChild(seedName)
                 if seedFrame and seedFrame:FindFirstChild("Stock") then
                     local stock = getStock(seedFrame.Stock.Text)
@@ -1025,6 +1021,7 @@ task.spawn(function()
                     -- Equipamento não encontrado
                 end
             end
+            end)
         else
             -- Auto-Buy desativado
         end
@@ -1044,9 +1041,10 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while true do
-        if AutoFireEnabled or AUTO_BAT_ENABLED then
-            local targetBrainrot = findTargetBrainrot(SelectedRarities)
+    while task.wait(0.1) do -- Adicionar delay mínimo
+        if (AutoFireEnabled or AUTO_BAT_ENABLED) and brainrotsFolder then
+            pcall(function()
+                local targetBrainrot = findTargetBrainrot(SelectedRarities)
             if targetBrainrot then
                 local targetPart = targetBrainrot.PrimaryPart or targetBrainrot:FindFirstChildWhichIsA("BasePart")
                 if targetPart then
@@ -1138,6 +1136,7 @@ task.spawn(function()
             else
                 task.wait(1)
             end
+            end)
         else
             task.wait(1)
         end
@@ -1204,22 +1203,51 @@ local function keyPressAntiAfk()
     end
 end
 
--- Loops anti-AFK passivos
+-- Loops anti-AFK passivos (otimizados)
 task.spawn(function()
-    while task.wait(25) do -- A cada 25 segundos
-        performAntiAfk()
+    while task.wait(30) do -- A cada 30 segundos (reduzido)
+        pcall(function()
+            performAntiAfk()
+        end)
     end
 end)
 
 task.spawn(function()
-    while task.wait(35) do -- A cada 35 segundos
-        cameraAntiAfk()
+    while task.wait(45) do -- A cada 45 segundos (reduzido)
+        pcall(function()
+            cameraAntiAfk()
+        end)
     end
 end)
 
 task.spawn(function()
-    while task.wait(50) do -- A cada 50 segundos
-        keyPressAntiAfk()
+    while task.wait(60) do -- A cada 60 segundos (reduzido)
+        pcall(function()
+            keyPressAntiAfk()
+        end)
+    end
+end)
+
+-- Sistema de monitoramento de performance
+local performanceStats = {
+    fps = 0,
+    memory = 0,
+    loops = 0,
+    errors = 0
+}
+
+-- Função para monitorar performance
+local function updatePerformanceStats()
+    performanceStats.fps = math.floor(1 / game:GetService("RunService").Heartbeat:Wait())
+    performanceStats.memory = game:GetService("Stats"):GetTotalMemoryUsageMb()
+end
+
+-- Loop de monitoramento de performance
+task.spawn(function()
+    while task.wait(10) do
+        pcall(function()
+            updatePerformanceStats()
+        end)
     end
 end)
 
@@ -1724,6 +1752,54 @@ UtilsTab:CreateButton({
     end
 })
 
+UtilsTab:CreateSection("Performance & Debug")
+UtilsTab:CreateButton({
+    Name = "Ver Estatísticas de Performance",
+    Callback = function()
+        local stats = "📊 **Estatísticas do Script:**\n\n"
+        stats = stats .. "🎮 **FPS:** " .. performanceStats.fps .. "\n"
+        stats = stats .. "💾 **Memória:** " .. math.floor(performanceStats.memory) .. " MB\n"
+        stats = stats .. "🔄 **Loops Ativos:** " .. performanceStats.loops .. "\n"
+        stats = stats .. "❌ **Erros:** " .. performanceStats.errors .. "\n\n"
+        stats = stats .. "⚡ **Status dos Sistemas:**\n"
+        stats = stats .. "Auto-Buy: " .. (AutoBuyEnabled and "✅" or "❌") .. "\n"
+        stats = stats .. "Combat: " .. (AutoFireEnabled and "✅" or "❌") .. "\n"
+        stats = stats .. "Anti-Lag: " .. (ANTI_LAG_ENABLED and "✅" or "❌") .. "\n"
+        stats = stats .. "Webhook: " .. (WEBHOOK_ENABLED and "✅" or "❌")
+        
+        showNotification("Performance", stats)
+    end
+})
+
+UtilsTab:CreateButton({
+    Name = "Otimizar Performance",
+    Callback = function()
+        -- Aplicar otimizações extras
+        task.spawn(function()
+            applyMaximumOptimization()
+            optimizeLoops()
+            clearProblematicRemotes()
+        end)
+        showNotification("Otimização", "Performance otimizada!")
+    end
+})
+
+UtilsTab:CreateButton({
+    Name = "Limpar Cache e Reset",
+    Callback = function()
+        -- Limpar caches
+        lastNotifiedBrainrots = {}
+        lastNotifiedPlants = {}
+        savedNotifications = {}
+        
+        -- Resetar estatísticas
+        performanceStats.errors = 0
+        performanceStats.loops = 0
+        
+        showNotification("Cache", "Cache limpo e performance resetada!")
+    end
+})
+
 UtilsTab:CreateSection("Informações")
 UtilsTab:CreateLabel("Script Version: 2.0 Premium")
 UtilsTab:CreateLabel("Features: Auto-Buy Premium Seeds, Combat, Utils, Anti-Lag")
@@ -2073,33 +2149,21 @@ local function checkSecretBrainrots()
             local brainrotName = brainrot.Name
             local brainrotId = brainrotName .. "_" .. rarity
             
-            -- Evitar notificações duplicadas
+            -- Evitar notificações duplicadas - APENAS SECRET e LIMITED
             if not lastNotifiedBrainrots[brainrotId] then
                 if (rarity == "Secret" and NOTIFY_SECRET_BRAINROTS) or 
-                   (rarity == "Limited" and NOTIFY_LIMITED_BRAINROTS) or
-                   (rarity == "Epic" and NOTIFY_SECRET_BRAINROTS) or
-                   (rarity == "Legendary" and NOTIFY_SECRET_BRAINROTS) or
-                   (rarity == "Mythic" and NOTIFY_SECRET_BRAINROTS) or
-                   (rarity == "Godly" and NOTIFY_SECRET_BRAINROTS) then
+                   (rarity == "Limited" and NOTIFY_LIMITED_BRAINROTS) then
                     
                     local info = getBrainrotInfo(brainrot)
                     local rarityEmoji = {
                         ["Secret"] = "🔥",
-                        ["Limited"] = "⚡", 
-                        ["Epic"] = "💜",
-                        ["Legendary"] = "🟡",
-                        ["Mythic"] = "🟠",
-                        ["Godly"] = "🔴"
+                        ["Limited"] = "⚡"
                     }
                     
                     local emoji = rarityEmoji[rarity] or "🤖"
                     local color = {
                         ["Secret"] = 16711680, -- Vermelho
-                        ["Limited"] = 16776960, -- Amarelo
-                        ["Epic"] = 10181046, -- Roxo
-                        ["Legendary"] = 16776960, -- Amarelo
-                        ["Mythic"] = 16744448, -- Laranja
-                        ["Godly"] = 16711680 -- Vermelho
+                        ["Limited"] = 16776960 -- Amarelo
                     }
                     
                     local description = "**" .. info.name .. "** apareceu no mapa!\n\n"
@@ -2127,20 +2191,24 @@ local function checkSecretBrainrots()
     end
 end
 
--- Loop para verificar plantas secretas/míticas
+-- Loop para verificar plantas secretas/míticas (otimizado)
 task.spawn(function()
-    while task.wait(30) do -- Verificar a cada 30 segundos
-        if WEBHOOK_ENABLED then
-            checkSecretPlants()
+    while task.wait(45) do -- Verificar a cada 45 segundos (reduzido)
+        if WEBHOOK_ENABLED and seedsFrame then
+            pcall(function()
+                checkSecretPlants()
+            end)
         end
     end
 end)
 
--- Loop para verificar brainrots secretos/limitados
+-- Loop para verificar brainrots secretos/limitados (otimizado)
 task.spawn(function()
-    while task.wait(10) do -- Verificar a cada 10 segundos
-        if WEBHOOK_ENABLED then
-            checkSecretBrainrots()
+    while task.wait(15) do -- Verificar a cada 15 segundos (reduzido)
+        if WEBHOOK_ENABLED and brainrotsFolder then
+            pcall(function()
+                checkSecretBrainrots()
+            end)
         end
     end
 end)
@@ -2229,19 +2297,19 @@ WebhookTab:CreateButton({
             return
         end
         
-        -- Simular notificação de brainrot detalhada
-        local description = "**Alessio** apareceu no mapa!\n\n"
-        description = description .. "📊 **Raridade:** Epic\n"
-        description = description .. "❤️ **Vida:** 1000 / 1300\n"
-        description = description .. "📏 **Distância:** 43 studs\n"
+        -- Simular notificação de brainrot detalhada (Secret)
+        local description = "**Matteo** apareceu no mapa!\n\n"
+        description = description .. "📊 **Raridade:** Secret\n"
+        description = description .. "❤️ **Vida:** 2500 / 3000\n"
+        description = description .. "📏 **Distância:** 25 studs\n"
         description = description .. "👤 **Dono:** guilhermeolol201\n"
         description = description .. "📍 **Posição:** 123, 45, 678\n\n"
         description = description .. "🎯 **Sistema de combate ativo para eliminar!**"
         
         local success = sendWebhook(
-            "💜 BRAINROT EPIC DETECTADO!",
+            "🔥 BRAINROT SECRET DETECTADO!",
             description,
-            10181046 -- Roxo
+            16711680 -- Vermelho
         )
         
         if success then
@@ -2346,16 +2414,6 @@ WebhookTab:CreateToggle({
     end
 })
 
-WebhookTab:CreateToggle({
-    Name = "Notificar Todas as Raridades (Epic+)",
-    CurrentValue = true,
-    Flag = "NotifyAllRaritiesToggle",
-    Callback = function(value)
-        NOTIFY_SECRET_BRAINROTS = value
-        showNotification("Webhook", "Notificação de todas as raridades " .. (value and "ativada" or "desativada") .. "!")
-        saveWebhookSettings() -- Salvar configurações automaticamente
-    end
-})
 
 WebhookTab:CreateSection("Informações")
 WebhookTab:CreateLabel("Como configurar:")
@@ -2371,6 +2429,11 @@ WebhookTab:CreateLabel("• Use Synapse X, Script-Ware ou KRNL")
 WebhookTab:CreateLabel("• Alguns executores bloqueiam HTTP")
 WebhookTab:CreateLabel("• Notificações são salvas automaticamente")
 WebhookTab:CreateLabel("• Tente usar webhook externo (veja abaixo)")
+
+WebhookTab:CreateSection("🎯 Foco em Raridades")
+WebhookTab:CreateLabel("• Apenas Brainrots SECRET e LIMITED")
+WebhookTab:CreateLabel("• Plantas Secretas/Godly e Míticas/Legendárias")
+WebhookTab:CreateLabel("• Notificações otimizadas e detalhadas")
 
 WebhookTab:CreateButton({
     Name = "Ver Notificações Salvas",
