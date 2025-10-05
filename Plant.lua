@@ -2130,10 +2130,10 @@ local function getBrainrotInfo(brainrot)
         end
     end
     
-    -- Obter dono do brainrot
+    -- Obter dono do brainrot (ID do jogador)
     local owner = brainrot:GetAttribute("Owner")
     if owner then
-        info.owner = owner
+        info.owner = "ID: " .. owner -- Mostrar que é ID do jogador
     end
     
     return info
@@ -2167,10 +2167,11 @@ local function checkSecretBrainrots()
                     }
                     
                     local description = "**" .. info.name .. "** apareceu no mapa!\n\n"
+                    description = description .. "🤖 **Brainrot:** " .. info.name .. "\n"
                     description = description .. "📊 **Raridade:** " .. info.rarity .. "\n"
                     description = description .. "❤️ **Vida:** " .. info.health .. " / " .. info.maxHealth .. "\n"
                     description = description .. "📏 **Distância:** " .. info.distance .. " studs\n"
-                    description = description .. "👤 **Dono:** " .. info.owner .. "\n"
+                    description = description .. "👤 **Dono (ID):** " .. info.owner .. "\n"
                     description = description .. "📍 **Posição:** " .. info.position .. "\n\n"
                     description = description .. "🎯 **Sistema de combate ativo para eliminar!**"
                     
