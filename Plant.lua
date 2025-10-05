@@ -1898,10 +1898,70 @@ end
 local lastNotifiedBrainrots = {}
 local lastNotifiedPlants = {}
 
+-- Função de debug para mostrar todos os atributos do brainrot
+local function debugBrainrotInfo(brainrot)
+    print("🔍 DEBUG BRAINROT:")
+    print("Nome: " .. brainrot.Name)
+    print("Classe: " .. brainrot.ClassName)
+    
+    -- Listar todos os atributos
+    local attributes = brainrot:GetAttributes()
+    for attrName, attrValue in pairs(attributes) do
+        print("Atributo " .. attrName .. ": " .. tostring(attrValue))
+    end
+    
+    -- Listar filhos importantes
+    for _, child in ipairs(brainrot:GetChildren()) do
+        if child:IsA("StringValue") or child:IsA("IntValue") or child:IsA("BoolValue") then
+            print("Filho " .. child.Name .. " (" .. child.ClassName .. "): " .. tostring(child.Value))
+        end
+    end
+    print("---")
+end
+
 -- Função para obter informações detalhadas do brainrot
 local function getBrainrotInfo(brainrot)
+    -- Tentar obter o nome real do brainrot de diferentes formas
+    local brainrotName = brainrot.Name
+    
+    -- Verificar se tem atributo DisplayName ou Name
+    local displayName = brainrot:GetAttribute("DisplayName") or brainrot:GetAttribute("Name")
+    if displayName and displayName ~= "" then
+        brainrotName = displayName
+    end
+    
+    -- Se o nome ainda for um ID (contém hífens), tentar outras formas
+    if brainrotName:match("^[a-f0-9%-]+$") then
+        -- É um ID, tentar encontrar o nome real
+        local realName = brainrot:GetAttribute("BrainrotName") or 
+                        brainrot:GetAttribute("CharacterName") or
+                        brainrot:GetAttribute("ModelName") or
+                        brainrot:GetAttribute("BrainrotType") or
+                        brainrot:GetAttribute("Type")
+        
+        if realName and realName ~= "" then
+            brainrotName = realName
+        else
+            -- Tentar procurar em filhos do brainrot por nomes
+            for _, child in ipairs(brainrot:GetChildren()) do
+                if child:IsA("StringValue") or child:IsA("StringValue") then
+                    if child.Name == "Name" or child.Name == "DisplayName" or child.Name == "BrainrotName" then
+                        brainrotName = child.Value
+                        break
+                    end
+                end
+            end
+            
+            -- Se ainda não encontrou, usar um nome genérico baseado na raridade
+            if brainrotName:match("^[a-f0-9%-]+$") then
+                local rarity = brainrot:GetAttribute("Rarity") or "Unknown"
+                brainrotName = "Brainrot " .. rarity .. " #" .. brainrotName:sub(1, 4)
+            end
+        end
+    end
+    
     local info = {
-        name = brainrot.Name,
+        name = brainrotName,
         rarity = brainrot:GetAttribute("Rarity") or "Unknown",
         health = "N/A",
         maxHealth = "N/A",
@@ -1950,6 +2010,9 @@ local function checkSecretBrainrots()
             if not lastNotifiedBrainrots[brainrotId] then
                 if (rarity == "Secret" and NOTIFY_SECRET_BRAINROTS) or 
                    (rarity == "Limited" and NOTIFY_LIMITED_BRAINROTS) then
+                    
+                    -- Debug para ver onde está o nome real
+                    debugBrainrotInfo(brainrot)
                     
                     local info = getBrainrotInfo(brainrot)
                     local rarityEmoji = {
