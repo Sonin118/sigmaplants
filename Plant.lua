@@ -180,132 +180,71 @@ end
 -- APLICAR ANTI-LAG AGORA MESMO
 applyImmediateAntiLag()
 
--- Loop para monitorar novos brainrots e torná-los invisíveis (otimizado)
+-- Loop para monitorar novos brainrots e torná-los invisíveis
 task.spawn(function()
-    while task.wait(5) do -- Verificar a cada 5 segundos (reduzido)
-        pcall(function()
-            hideAllBrainrots()
-        end)
+    while task.wait(1) do -- Verificar a cada 1 segundo
+        hideAllBrainrots()
     end
 end)
 
--- Aguardar o PlayerGui carregar com verificação de segurança
-local playerGui
-local success, errorMsg = pcall(function()
-    playerGui = player:WaitForChild("PlayerGui", 10)
-end)
-
-if not success or not playerGui then
-    print("Erro: PlayerGui não encontrado - " .. tostring(errorMsg))
-    print("Tentando aguardar mais tempo...")
-    playerGui = player:WaitForChild("PlayerGui", 30) -- Aguardar mais tempo
-    if not playerGui then
-        print("PlayerGui não encontrado após 30 segundos!")
-        print("Continuando sem PlayerGui...")
-        -- Continuar mesmo sem PlayerGui
-    end
+-- Aguardar o PlayerGui carregar
+local playerGui = player:WaitForChild("PlayerGui", 10)
+if not playerGui then
+    error("PlayerGui não encontrado!")
 end
 
 -- Tentar PlayerGui primeiro, depois StarterGui
-local mainGui
-if playerGui then
-    mainGui = playerGui:FindFirstChild("Main")
-    if not mainGui then
-        local starterGui = game:GetService("StarterGui")
-        mainGui = starterGui:FindFirstChild("Main")
-        if not mainGui then
-            print("Erro: Main GUI não encontrado em PlayerGui nem StarterGui!")
-            print("Aguardando Main GUI aparecer...")
-            task.wait(5)
-            if playerGui then
-                mainGui = playerGui:WaitForChild("Main", 30)
-            end
-            if not mainGui then
-                print("Main GUI ainda não encontrado, tentando StarterGui...")
-                mainGui = starterGui:WaitForChild("Main", 30)
-            end
-        else
-            print("Main GUI encontrado em StarterGui")
-        end
-    else
-        print("Main GUI encontrado em PlayerGui")
-    end
-else
-    print("PlayerGui não disponível, tentando StarterGui...")
+local mainGui = playerGui:FindFirstChild("Main")
+if not mainGui then
     local starterGui = game:GetService("StarterGui")
     mainGui = starterGui:FindFirstChild("Main")
     if not mainGui then
-        print("Main GUI não encontrado em StarterGui também!")
-        -- Continuar sem Main GUI
-    end
-end
-
-local seedsGui
-local gearsGui
-
-if mainGui then
-    seedsGui = mainGui:FindFirstChild("Seeds")
-    if not seedsGui then
-        print("Seeds GUI não encontrado, aguardando...")
-        seedsGui = mainGui:WaitForChild("Seeds", 30)
-        if not seedsGui then
-            print("Seeds GUI não encontrado após 30 segundos!")
-            -- Continuar sem Seeds GUI
-        end
-    end
-
-    gearsGui = mainGui:FindFirstChild("Gears")
-    if not gearsGui then
-        print("Gears GUI não encontrado, aguardando...")
-        gearsGui = mainGui:WaitForChild("Gears", 30)
-        if not gearsGui then
-            print("Gears GUI não encontrado após 30 segundos!")
-            -- Continuar sem Gears GUI
-        end
+        error("Main GUI não encontrado em PlayerGui nem StarterGui!")
+    else
+        -- Main GUI encontrado em StarterGui
     end
 else
-    print("Main GUI não disponível, continuando sem GUIs...")
+    -- Main GUI encontrado em PlayerGui
 end
 
-local seedsFrame
-local gearsFrame
+local seedsGui = mainGui:FindFirstChild("Seeds")
+if not seedsGui then
+    error("Seeds GUI não encontrado!")
+end
 
-if seedsGui then
-    local seedsFrameParent = seedsGui:FindFirstChild("Frame")
-    if seedsFrameParent then
-        seedsFrame = seedsFrameParent:FindFirstChild("ScrollingFrame")
-        if not seedsFrame then
-            print("Seeds ScrollingFrame não encontrado")
-        end
-    else
-        print("Seeds Frame não encontrado")
+local gearsGui = mainGui:FindFirstChild("Gears")
+if not gearsGui then
+    error("Gears GUI não encontrado!")
+end
+
+local seedsFrame = seedsGui:FindFirstChild("Frame")
+if seedsFrame then
+    seedsFrame = seedsFrame:FindFirstChild("ScrollingFrame")
+    if not seedsFrame then
+        -- Seeds ScrollingFrame não encontrado
     end
 else
-    print("SeedsGui não disponível")
+    -- Seeds Frame não encontrado
 end
 
-if gearsGui then
-    local gearsFrameParent = gearsGui:FindFirstChild("Frame")
-    if gearsFrameParent then
-        gearsFrame = gearsFrameParent:FindFirstChild("ScrollingFrame")
-        if not gearsFrame then
-            print("Gears ScrollingFrame não encontrado")
-            -- Tentar procurar diretamente no gearsGui
-            gearsFrame = gearsGui:FindFirstChild("ScrollingFrame")
-            if gearsFrame then
-                print("Gears ScrollingFrame encontrado diretamente")
-            end
-        end
-    else
-        print("Gears Frame não encontrado")
+local gearsFrame = gearsGui:FindFirstChild("Frame")
+if gearsFrame then
+    gearsFrame = gearsFrame:FindFirstChild("ScrollingFrame")
+    if not gearsFrame then
+        -- Gears ScrollingFrame não encontrado
         -- Tentar procurar diretamente no gearsGui
         gearsFrame = gearsGui:FindFirstChild("ScrollingFrame")
         if gearsFrame then
-            print("Gears ScrollingFrame encontrado diretamente")
+            -- Gears ScrollingFrame encontrado diretamente
         end
     end
 else
-    print("GearsGui não disponível")
+    -- Gears Frame não encontrado
+    -- Tentar procurar diretamente no gearsGui
+    gearsFrame = gearsGui:FindFirstChild("ScrollingFrame")
+    if gearsFrame then
+        -- Gears ScrollingFrame encontrado diretamente
+    end
 end
 
 -- Aguardar os remotes com timeout
@@ -316,27 +255,19 @@ local buyItemRemote
 local equipBestBrainrotsRemote
 
 pcall(function()
-    local bridgeNet2 = ReplicatedStorage:WaitForChild("BridgeNet2", 15)
+    local bridgeNet2 = ReplicatedStorage:WaitForChild("BridgeNet2", 10)
     if bridgeNet2 then
-        dataRemoteEvent = bridgeNet2:WaitForChild("dataRemoteEvent", 10)
-        if dataRemoteEvent then
-            print("DataRemoteEvent encontrado!")
-        end
+        dataRemoteEvent = bridgeNet2:WaitForChild("dataRemoteEvent", 5)
     end
 end)
 
 pcall(function()
-    local remotes = ReplicatedStorage:WaitForChild("Remotes", 15)
+    local remotes = ReplicatedStorage:WaitForChild("Remotes", 10)
     if remotes then
-        useItemRemote = remotes:WaitForChild("UseItem", 10)
-        buyGearRemote = remotes:WaitForChild("BuyGear", 10)
-        buyItemRemote = remotes:WaitForChild("BuyItem", 10)
-        equipBestBrainrotsRemote = remotes:WaitForChild("EquipBestBrainrots", 10)
-        
-        if useItemRemote then print("UseItem remote encontrado!") end
-        if buyGearRemote then print("BuyGear remote encontrado!") end
-        if buyItemRemote then print("BuyItem remote encontrado!") end
-        if equipBestBrainrotsRemote then print("EquipBestBrainrots remote encontrado!") end
+        useItemRemote = remotes:WaitForChild("UseItem", 5)
+        buyGearRemote = remotes:WaitForChild("BuyGear", 5)
+        buyItemRemote = remotes:WaitForChild("BuyItem", 5)
+        equipBestBrainrotsRemote = remotes:WaitForChild("EquipBestBrainrots", 5)
     end
 end)
 
@@ -470,9 +401,6 @@ end
 local savedConfigs = loadSavedConfigs()
 
 local function getStock(text)
-    if not text or type(text) ~= "string" then
-        return 0
-    end
     local amount = text:match("x(%d+)")
     return tonumber(amount) or 0
 end
@@ -539,57 +467,23 @@ local function buyItem(itemName, amount, isSeed)
     end
 end
 
-local character = player.Character
-if not character then
-    print("Character não encontrado, aguardando...")
-    character = player.CharacterAdded:Wait(30)
-    if not character then
-        print("Character não encontrado após 30 segundos!")
-        -- Continuar sem character
-    end
-end
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
 
-local hrp
-local humanoid
+local plotsFolder = Workspace:WaitForChild("Plots")
 local myPlot
-
-if character then
-    hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then
-        hrp = character:WaitForChild("HumanoidRootPart", 10)
-        if not hrp then
-            print("HumanoidRootPart não encontrado!")
-        end
-    end
-    
-    humanoid = character:FindFirstChild("Humanoid")
-    if not humanoid then
-        humanoid = character:WaitForChild("Humanoid", 10)
-        if not humanoid then
-            print("Humanoid não encontrado!")
-        end
+for _, plot in ipairs(plotsFolder:GetChildren()) do
+    if plot:GetAttribute("Owner") == player.Name then
+        myPlot = plot
+        break
     end
 end
-
-local plotsFolder = Workspace:FindFirstChild("Plots")
-if plotsFolder then
-    for _, plot in ipairs(plotsFolder:GetChildren()) do
-        if plot:GetAttribute("Owner") == player.Name then
-            myPlot = plot
-            break
-        end
-    end
-    if not myPlot then
-        print("Plot do jogador não encontrado!")
-        -- Continuar sem plot
-    end
-else
-    print("Plots folder não encontrado!")
-end
+if not myPlot then return end
 
 local tierModel
 local highestTier = 0
-if myPlot and myPlot:FindFirstChild("Other") then
+if myPlot:FindFirstChild("Other") then
     for _, candidate in ipairs(myPlot.Other:GetChildren()) do
         local tierNum = candidate.Name:match("^Tier(%d+)$")
         if tierNum then
@@ -601,28 +495,13 @@ if myPlot and myPlot:FindFirstChild("Other") then
         end
     end
 end
-if not tierModel then
-    print("TierModel não encontrado!")
-    -- Continuar sem tierModel
-end
+if not tierModel then return end
 
-local roadModel
+local roadModel = tierModel:FindFirstChild("Road")
+if not roadModel then return end
 local roadParts = {}
-
-if tierModel then
-    roadModel = tierModel:FindFirstChild("Road")
-    if roadModel then
-        for _, p in ipairs(roadModel:GetDescendants()) do
-            if p:IsA("BasePart") then 
-                table.insert(roadParts, p) 
-            end
-        end
-        print("Road parts encontrados: " .. #roadParts)
-    else
-        print("Road model não encontrado!")
-    end
-else
-    print("TierModel não disponível para road!")
+for _, p in ipairs(roadModel:GetDescendants()) do
+    if p:IsA("BasePart") then table.insert(roadParts,p) end
 end
 
 local Clip = true
@@ -813,11 +692,6 @@ local FIRE_INTERVAL = 2
 
 local function findTargetBrainrot(selectedRarities)
     if not brainrotsFolder then
-        return nil
-    end
-    
-    if not roadParts or #roadParts == 0 then
-        print("Road parts não disponíveis para detecção!")
         return nil
     end
     
@@ -1048,26 +922,32 @@ CombatTab:CreateSlider({
     end
 })
 
--- Loop para coletar dinheiro automaticamente (equipar melhores brainrots) - otimizado
+-- Loop para coletar dinheiro automaticamente (equipar melhores brainrots)
 task.spawn(function()
     while task.wait(COLLECT_MONEY_COOLDOWN) do -- A cada 300 segundos (5 minutos)
         if AUTO_COLLECT_MONEY and equipBestBrainrotsRemote then
-            -- Coletando dinheiro automaticamente
-            pcall(function()
+            print("💰 Coletando dinheiro automaticamente...")
+            local success, errorMsg = pcall(function()
                 equipBestBrainrotsRemote:FireServer()
-                showNotification("Collect Money", "Dinheiro coletado automaticamente!")
             end)
+            
+            if success then
+                print("✅ Dinheiro coletado com sucesso!")
+                showNotification("Collect Money", "Dinheiro coletado automaticamente!")
+            else
+                print("❌ Erro ao coletar dinheiro: " .. tostring(errorMsg))
+            end
         end
     end
 end)
 
 task.spawn(function()
     while task.wait(BUY_DELAY) do
-        if AutoBuyEnabled and seedsFrame and gearsFrame then
+        if AutoBuyEnabled then
             -- Auto-Buy ativo - verificando itens
-            pcall(function()
-                -- Comprar sementes
-                for _, seedName in ipairs(SelectedSeeds) do
+            
+            -- Comprar sementes
+            for _, seedName in ipairs(SelectedSeeds) do
                 local seedFrame = seedsFrame:FindFirstChild(seedName)
                 if seedFrame and seedFrame:FindFirstChild("Stock") then
                     local stock = getStock(seedFrame.Stock.Text)
@@ -1076,24 +956,21 @@ task.spawn(function()
                         if stock > 0 then
                             buyItem(seedName, stock, true)
                             
-                            -- Notificar se comprou uma planta especial
-                            if SPECIAL_PLANTS[seedName] then
-                                local plantType = SPECIAL_PLANTS[seedName]
-                                if WEBHOOK_ENABLED then
-                                    if plantType == "Secret" and NOTIFY_SECRET_PLANTS then
-                                        sendWebhook(
-                                            "✅ PLANTA SECRETA COMPRADA!",
-                                            "**" .. seedName .. "** foi comprada automaticamente!\nQuantidade: **x" .. stock .. "**\n\n🎉 Auto-Buy funcionando perfeitamente!",
-                                            65280 -- Verde
-                                        )
-                                    elseif plantType == "Mythic" and NOTIFY_MYTHIC_PLANTS then
-                                        sendWebhook(
-                                            "✅ PLANTA MÍTICA COMPRADA!",
-                                            "**" .. seedName .. "** foi comprada automaticamente!\nQuantidade: **x" .. stock .. "**\n\n🎉 Auto-Buy funcionando perfeitamente!",
-                                            65280 -- Verde
-                                        )
-                                    end
+                            -- Notificar se comprou uma das 8 sementes específicas
+                            local isPrioritySeed = false
+                            for _, prioritySeed in ipairs(PRIORITY_SEEDS) do
+                                if seedName == prioritySeed then
+                                    isPrioritySeed = true
+                                    break
                                 end
+                            end
+                            
+                            if isPrioritySeed and WEBHOOK_ENABLED then
+                                sendWebhook(
+                                    "✅ SEMENTE ESPECIAL COMPRADA!",
+                                    "**" .. seedName .. "** foi comprada automaticamente!\nQuantidade: **x" .. stock .. "**\n\n🎉 Auto-Buy funcionando perfeitamente!",
+                                    65280 -- Verde
+                                )
                             end
                         else
                             -- Estoque zero
@@ -1101,24 +978,21 @@ task.spawn(function()
                     else
                         buyItem(seedName, stock, true)
                         
-                        -- Notificar se comprou uma planta especial
-                        if SPECIAL_PLANTS[seedName] then
-                            local plantType = SPECIAL_PLANTS[seedName]
-                            if WEBHOOK_ENABLED then
-                                if plantType == "Secret" and NOTIFY_SECRET_PLANTS then
-                                    sendWebhook(
-                                        "✅ PLANTA SECRETA COMPRADA!",
-                                        "**" .. seedName .. "** foi comprada automaticamente!\nQuantidade: **x" .. stock .. "**\n\n🎉 Auto-Buy funcionando perfeitamente!",
-                                        65280 -- Verde
-                                    )
-                                elseif plantType == "Mythic" and NOTIFY_MYTHIC_PLANTS then
-                                    sendWebhook(
-                                        "✅ PLANTA MÍTICA COMPRADA!",
-                                        "**" .. seedName .. "** foi comprada automaticamente!\nQuantidade: **x" .. stock .. "**\n\n🎉 Auto-Buy funcionando perfeitamente!",
-                                        65280 -- Verde
-                                    )
-                                end
+                        -- Notificar se comprou uma das 8 sementes específicas
+                        local isPrioritySeed = false
+                        for _, prioritySeed in ipairs(PRIORITY_SEEDS) do
+                            if seedName == prioritySeed then
+                                isPrioritySeed = true
+                                break
                             end
+                        end
+                        
+                        if isPrioritySeed and WEBHOOK_ENABLED then
+                            sendWebhook(
+                                "✅ SEMENTE ESPECIAL COMPRADA!",
+                                "**" .. seedName .. "** foi comprada automaticamente!\nQuantidade: **x" .. stock .. "**\n\n🎉 Auto-Buy funcionando perfeitamente!",
+                                65280 -- Verde
+                            )
                         end
                     end
                 else
@@ -1145,7 +1019,6 @@ task.spawn(function()
                     -- Equipamento não encontrado
                 end
             end
-            end)
         else
             -- Auto-Buy desativado
         end
@@ -1165,10 +1038,9 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while task.wait(0.1) do -- Adicionar delay mínimo
-        if (AutoFireEnabled or AUTO_BAT_ENABLED) and brainrotsFolder then
-            pcall(function()
-                local targetBrainrot = findTargetBrainrot(SelectedRarities)
+    while true do
+        if AutoFireEnabled or AUTO_BAT_ENABLED then
+            local targetBrainrot = findTargetBrainrot(SelectedRarities)
             if targetBrainrot then
                 local targetPart = targetBrainrot.PrimaryPart or targetBrainrot:FindFirstChildWhichIsA("BasePart")
                 if targetPart then
@@ -1260,118 +1132,34 @@ task.spawn(function()
             else
                 task.wait(1)
             end
-            end)
         else
             task.wait(1)
         end
     end
 end)
 
--- Sistema Anti-AFK Passivo (sempre ativo)
-local lastAntiAfkAction = 0
+-- Sistema Anti-AFK Simples (apenas pulo a cada 5 minutos)
+local lastAntiAfkJump = 0
 
--- Função para executar ações anti-AFK
-local function performAntiAfk()
+-- Função simples para pular a cada 5 minutos
+local function simpleAntiAfk()
     local currentTime = tick()
-    if currentTime - lastAntiAfkAction < 25 then return end -- A cada 25 segundos
+    if currentTime - lastAntiAfkJump < 300 then return end -- A cada 5 minutos (300 segundos)
     
-    lastAntiAfkAction = currentTime
+    lastAntiAfkJump = currentTime
     
-    -- Movimento anti-AFK
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        local hrp = character.HumanoidRootPart
-        local currentPosition = hrp.Position
-        
-        -- Pequeno movimento sutil
-        local newPosition = currentPosition + Vector3.new(0, 0, 0.5)
-        hrp.CFrame = CFrame.new(newPosition)
-        task.wait(0.05)
-        hrp.CFrame = CFrame.new(currentPosition)
-    end
-    
-    -- Pulo anti-AFK
+    -- Apenas um pulo simples
     if character and character:FindFirstChild("Humanoid") then
         local humanoid = character.Humanoid
         humanoid.Jump = true
-        task.wait(0.05)
-        humanoid.Jump = false
+        print("🦘 Anti-AFK: Pulou para evitar desconexão")
     end
 end
 
--- Sistema anti-AFK com rotação de câmera
-local function cameraAntiAfk()
-    local camera = workspace.CurrentCamera
-    if camera then
-        -- Pequena rotação da câmera
-        local currentCFrame = camera.CFrame
-        local newCFrame = currentCFrame * CFrame.Angles(0, math.rad(0.5), 0)
-        camera.CFrame = newCFrame
-        task.wait(0.05)
-        camera.CFrame = currentCFrame
-    end
-end
-
--- Sistema anti-AFK com teclas
-local function keyPressAntiAfk()
-    local VirtualInputManager = game:GetService("VirtualInputManager")
-    if VirtualInputManager then
-        -- Simular pressionar tecla W
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.W, false, game)
-        task.wait(0.05)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.W, false, game)
-        
-        -- Simular pressionar tecla S
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.S, false, game)
-        task.wait(0.05)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.S, false, game)
-    end
-end
-
--- Loops anti-AFK passivos (otimizados)
+-- Loop anti-AFK simples
 task.spawn(function()
-    while task.wait(30) do -- A cada 30 segundos (reduzido)
-        pcall(function()
-            performAntiAfk()
-        end)
-    end
-end)
-
-task.spawn(function()
-    while task.wait(45) do -- A cada 45 segundos (reduzido)
-        pcall(function()
-            cameraAntiAfk()
-        end)
-    end
-end)
-
-task.spawn(function()
-    while task.wait(60) do -- A cada 60 segundos (reduzido)
-        pcall(function()
-            keyPressAntiAfk()
-        end)
-    end
-end)
-
--- Sistema de monitoramento de performance
-local performanceStats = {
-    fps = 0,
-    memory = 0,
-    loops = 0,
-    errors = 0
-}
-
--- Função para monitorar performance
-local function updatePerformanceStats()
-    performanceStats.fps = math.floor(1 / game:GetService("RunService").Heartbeat:Wait())
-    performanceStats.memory = game:GetService("Stats"):GetTotalMemoryUsageMb()
-end
-
--- Loop de monitoramento de performance
-task.spawn(function()
-    while task.wait(10) do
-        pcall(function()
-            updatePerformanceStats()
-        end)
+    while task.wait(60) do -- Verificar a cada 1 minuto
+        simpleAntiAfk()
     end
 end)
 
@@ -1876,54 +1664,6 @@ UtilsTab:CreateButton({
     end
 })
 
-UtilsTab:CreateSection("Performance & Debug")
-UtilsTab:CreateButton({
-    Name = "Ver Estatísticas de Performance",
-    Callback = function()
-        local stats = "📊 **Estatísticas do Script:**\n\n"
-        stats = stats .. "🎮 **FPS:** " .. performanceStats.fps .. "\n"
-        stats = stats .. "💾 **Memória:** " .. math.floor(performanceStats.memory) .. " MB\n"
-        stats = stats .. "🔄 **Loops Ativos:** " .. performanceStats.loops .. "\n"
-        stats = stats .. "❌ **Erros:** " .. performanceStats.errors .. "\n\n"
-        stats = stats .. "⚡ **Status dos Sistemas:**\n"
-        stats = stats .. "Auto-Buy: " .. (AutoBuyEnabled and "✅" or "❌") .. "\n"
-        stats = stats .. "Combat: " .. (AutoFireEnabled and "✅" or "❌") .. "\n"
-        stats = stats .. "Anti-Lag: " .. (ANTI_LAG_ENABLED and "✅" or "❌") .. "\n"
-        stats = stats .. "Webhook: " .. (WEBHOOK_ENABLED and "✅" or "❌")
-        
-        showNotification("Performance", stats)
-    end
-})
-
-UtilsTab:CreateButton({
-    Name = "Otimizar Performance",
-    Callback = function()
-        -- Aplicar otimizações extras
-        task.spawn(function()
-            applyMaximumOptimization()
-            optimizeLoops()
-            clearProblematicRemotes()
-        end)
-        showNotification("Otimização", "Performance otimizada!")
-    end
-})
-
-UtilsTab:CreateButton({
-    Name = "Limpar Cache e Reset",
-    Callback = function()
-        -- Limpar caches
-        lastNotifiedBrainrots = {}
-        lastNotifiedPlants = {}
-        savedNotifications = {}
-        
-        -- Resetar estatísticas
-        performanceStats.errors = 0
-        performanceStats.loops = 0
-        
-        showNotification("Cache", "Cache limpo e performance resetada!")
-    end
-})
-
 UtilsTab:CreateSection("Informações")
 UtilsTab:CreateLabel("Script Version: 2.0 Premium")
 UtilsTab:CreateLabel("Features: Auto-Buy Premium Seeds, Combat, Utils, Anti-Lag")
@@ -1942,52 +1682,12 @@ end
 -- Sistema de Webhook do Discord
 local WEBHOOK_URL = ""
 local WEBHOOK_ENABLED = false
-local NOTIFY_SECRET_PLANTS = true
-local NOTIFY_MYTHIC_PLANTS = true
 local NOTIFY_SECRET_BRAINROTS = true
 local NOTIFY_LIMITED_BRAINROTS = true
 
--- Função para salvar configurações do webhook
-local function saveWebhookSettings()
-    local settings = {
-        WEBHOOK_ENABLED = WEBHOOK_ENABLED,
-        NOTIFY_SECRET_PLANTS = NOTIFY_SECRET_PLANTS,
-        NOTIFY_MYTHIC_PLANTS = NOTIFY_MYTHIC_PLANTS,
-        NOTIFY_SECRET_BRAINROTS = NOTIFY_SECRET_BRAINROTS,
-        NOTIFY_LIMITED_BRAINROTS = NOTIFY_LIMITED_BRAINROTS
-    }
-    
-    local success, errorMsg = pcall(function()
-        writefile("PlantsVsBrainrot_WebhookSettings.json", game:GetService("HttpService"):JSONEncode(settings))
-    end)
-    
-    if not success then
-        print("Erro ao salvar configurações do webhook: " .. tostring(errorMsg))
-    end
-end
-
--- Função para carregar configurações do webhook
-local function loadWebhookSettings()
-    if isfile("PlantsVsBrainrot_WebhookSettings.json") then
-        local success, settings = pcall(function()
-            return game:GetService("HttpService"):JSONDecode(readfile("PlantsVsBrainrot_WebhookSettings.json"))
-        end)
-        
-        if success and settings then
-            WEBHOOK_ENABLED = settings.WEBHOOK_ENABLED or false
-            NOTIFY_SECRET_PLANTS = settings.NOTIFY_SECRET_PLANTS or true
-            NOTIFY_MYTHIC_PLANTS = settings.NOTIFY_MYTHIC_PLANTS or true
-            NOTIFY_SECRET_BRAINROTS = settings.NOTIFY_SECRET_BRAINROTS or true
-            NOTIFY_LIMITED_BRAINROTS = settings.NOTIFY_LIMITED_BRAINROTS or true
-            return true
-        end
-    end
-    return false
-end
-
 -- Função para enviar webhook usando método alternativo
 local function sendWebhook(title, description, color)
-    if not WEBHOOK_ENABLED or WEBHOOK_URL == "" or not title or not description then
+    if not WEBHOOK_ENABLED or WEBHOOK_URL == "" then
         return false
     end
     
@@ -2030,28 +1730,24 @@ local function sendWebhook(title, description, color)
             return response.StatusCode == 200 or response.StatusCode == 204
         end
         
-                -- Método 3: Usar HttpService (pode não funcionar)
-                local http = game:GetService("HttpService")
-                if not http or not http.JSONEncode or not http.RequestAsync then
-                    return false
-                end
-                
-                local payload = {
-                    username = "SoninHub Bot",
-                    content = "**" .. title .. "**\n\n" .. description .. "\n\n*SoninHub v2.0 - Plants vs Brainrot*"
-                }
-                
-                local jsonPayload = http:JSONEncode(payload)
-                local response = http:RequestAsync({
-                    Url = WEBHOOK_URL,
-                    Method = "POST",
-                    Headers = {
-                        ["Content-Type"] = "application/json"
-                    },
-                    Body = jsonPayload
-                })
-                
-                return response and response.Success
+        -- Método 3: Usar HttpService (pode não funcionar)
+        local http = game:GetService("HttpService")
+        local payload = {
+            username = "SoninHub Bot",
+            content = "**" .. title .. "**\n\n" .. description .. "\n\n*SoninHub v2.0 - Plants vs Brainrot*"
+        }
+        
+        local jsonPayload = http:JSONEncode(payload)
+        local response = http:RequestAsync({
+            Url = WEBHOOK_URL,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = jsonPayload
+        })
+        
+        return response.Success
     end)
     
     if not success then
@@ -2148,103 +1844,19 @@ local function sendWebhookEmbed(title, description, color)
     return success
 end
 
--- Lista de plantas especiais para detectar
-local SPECIAL_PLANTS = {
-    -- Plantas Secretas/Godly
-    ["Shroombino Seed"] = "Secret",
-    ["Mango Seed"] = "Secret", 
-    ["Carnivorous Plant Seed"] = "Secret",
-    ["Mr Carrot Seed"] = "Secret",
-    ["Tomatrio Seed"] = "Secret",
-    ["Watermelon Seed"] = "Secret",
-    ["Grape Seed"] = "Secret",
-    ["Cocotank Seed"] = "Secret",
-    -- Plantas Míticas/Legendárias
-    ["Peashooter Seed"] = "Mythic",
-    ["Sunflower Seed"] = "Mythic",
-    ["Cherry Bomb Seed"] = "Mythic",
-    ["Wall-nut Seed"] = "Mythic",
-    ["Potato Mine Seed"] = "Mythic",
-    ["Snow Pea Seed"] = "Mythic",
-    ["Chomper Seed"] = "Mythic",
-    ["Repeater Seed"] = "Mythic",
-    ["Puff-shroom Seed"] = "Mythic",
-    ["Sun-shroom Seed"] = "Mythic",
-    ["Fume-shroom Seed"] = "Mythic",
-    ["Grave Buster Seed"] = "Mythic",
-    ["Hypno-shroom Seed"] = "Mythic",
-    ["Scaredy-shroom Seed"] = "Mythic",
-    ["Ice-shroom Seed"] = "Mythic",
-    ["Doom-shroom Seed"] = "Mythic"
-}
-
--- Sementes prioritárias para monitoramento de estoque
+-- Lista APENAS das 8 sementes específicas que você quer notificar
 local PRIORITY_SEEDS = {
     "Shroombino Seed",
     "Mango Seed", 
     "Carnivorous Plant Seed",
     "Mr Carrot Seed",
     "Tomatrio Seed",
-    "Cocotank Seed",
     "Watermelon Seed",
-    "Grape Seed"
+    "Grape Seed",
+    "Cocotank Seed"
 }
 
--- Função para verificar mudanças de estoque
-local function checkStockChanges()
-    if not seedsFrame then return end
-    
-    for _, itemFrame in ipairs(seedsFrame:GetChildren()) do
-        if itemFrame:IsA("Frame") and itemFrame:FindFirstChild("Stock") then
-            local seedName = itemFrame.Name
-            local currentStock = getStock(itemFrame.Stock.Text)
-            
-            -- Verificar se é uma semente prioritária
-            local isPriority = false
-            for _, prioritySeed in ipairs(PRIORITY_SEEDS) do
-                if seedName == prioritySeed then
-                    isPriority = true
-                    break
-                end
-            end
-            
-            if isPriority then
-                local lastStock = lastStockValues[seedName] or 0
-                
-                -- Se o estoque mudou
-                if currentStock ~= lastStock then
-                    local stockChange = currentStock - lastStock
-                    local changeText = ""
-                    
-                    if stockChange > 0 then
-                        changeText = "📈 **Estoque aumentou:** +" .. stockChange
-                    else
-                        changeText = "📉 **Estoque diminuiu:** " .. stockChange
-                    end
-                    
-                    local description = "**" .. seedName .. "** - Mudança de estoque detectada!\n\n"
-                    description = description .. "🏪 **Loja:** Seeds Shop\n"
-                    description = description .. "📦 **Estoque anterior:** x" .. lastStock .. "\n"
-                    description = description .. "📦 **Estoque atual:** x" .. currentStock .. "\n"
-                    description = description .. changeText .. "\n"
-                    description = description .. "🎯 **Auto-Buy:** " .. (AutoBuyEnabled and "Ativo" or "Inativo") .. "\n"
-                    description = description .. "⏰ **Detectado em:** " .. os.date("%H:%M:%S")
-                    
-                    sendWebhook(
-                        "📦 ESTOQUE ATUALIZADO!",
-                        description,
-                        3447003 -- Azul
-                    )
-                end
-                
-                -- Atualizar valor do estoque
-                lastStockValues[seedName] = currentStock
-            end
-        end
-    end
-end
-
--- Função para verificar plantas secretas/míticas no shop (APENAS as específicas)
+-- Função para verificar APENAS as 8 sementes específicas no shop
 local function checkSecretPlants()
     if not seedsFrame then return end
     
@@ -2253,17 +1865,17 @@ local function checkSecretPlants()
             local seedName = itemFrame.Name
             local stock = getStock(itemFrame.Stock.Text)
             
-            -- Verificar se é uma das sementes específicas da lista
-            local isInSpecificList = false
-            for _, specificSeed in ipairs(PRIORITY_SEEDS) do
-                if seedName == specificSeed then
-                    isInSpecificList = true
+            -- Verificar se é uma das 8 sementes específicas
+            local isPrioritySeed = false
+            for _, prioritySeed in ipairs(PRIORITY_SEEDS) do
+                if seedName == prioritySeed then
+                    isPrioritySeed = true
                     break
                 end
             end
             
-            -- Só notificar se estiver na lista específica e tiver estoque
-            if stock > 0 and isInSpecificList then
+            -- Só notificar se for uma das 8 sementes específicas e tiver estoque
+            if stock > 0 and isPrioritySeed then
                 local description = "**" .. seedName .. "** está disponível no shop!\n\n"
                 description = description .. "🏪 **Loja:** Seeds Shop\n"
                 description = description .. "📦 **Estoque:** x" .. stock .. "\n"
@@ -2278,7 +1890,6 @@ local function checkSecretPlants()
                     16711680 -- Vermelho
                 )
             end
-            end
         end
     end
 end
@@ -2286,7 +1897,6 @@ end
 -- Cache para evitar notificações duplicadas
 local lastNotifiedBrainrots = {}
 local lastNotifiedPlants = {}
-local lastStockValues = {} -- Para rastrear mudanças de estoque
 
 -- Função para obter informações detalhadas do brainrot
 local function getBrainrotInfo(brainrot)
@@ -2317,10 +1927,10 @@ local function getBrainrotInfo(brainrot)
         end
     end
     
-    -- Obter dono do brainrot (ID do jogador)
+    -- Obter dono do brainrot
     local owner = brainrot:GetAttribute("Owner")
     if owner then
-        info.owner = "ID: " .. owner -- Mostrar que é ID do jogador
+        info.owner = owner
     end
     
     return info
@@ -2379,151 +1989,22 @@ local function checkSecretBrainrots()
     end
 end
 
--- Loop para verificar plantas secretas/míticas (otimizado)
+-- Loop para verificar plantas secretas/míticas
 task.spawn(function()
-    while task.wait(45) do -- Verificar a cada 45 segundos (reduzido)
-        if WEBHOOK_ENABLED and seedsFrame then
-            pcall(function()
-                checkSecretPlants()
-            end)
+    while task.wait(30) do -- Verificar a cada 30 segundos
+        if WEBHOOK_ENABLED then
+            checkSecretPlants()
         end
     end
 end)
 
--- Loop para verificar brainrots secretos/limitados (otimizado)
+-- Loop para verificar brainrots secretos/limitados
 task.spawn(function()
-    while task.wait(15) do -- Verificar a cada 15 segundos (reduzido)
-        if WEBHOOK_ENABLED and brainrotsFolder then
-            pcall(function()
-                checkSecretBrainrots()
-            end)
+    while task.wait(10) do -- Verificar a cada 10 segundos
+        if WEBHOOK_ENABLED then
+            checkSecretBrainrots()
         end
     end
-end)
-
--- Sistema de detecção de estoque em tempo real
-local function setupRealtimeStockDetection()
-    -- Conectar aos eventos de atualização de estoque do jogo
-    local success, remotes = pcall(function()
-        return game:GetService("ReplicatedStorage"):WaitForChild("Remotes", 10)
-    end)
-    
-    if not success or not remotes then
-        print("Erro: Não foi possível encontrar Remotes no ReplicatedStorage")
-        return
-    end
-    
-    -- Evento quando estoque de uma semente específica muda
-    local updStockRemote = remotes:FindFirstChild("UpdStock")
-    if updStockRemote and updStockRemote.OnClientEvent then
-        updStockRemote.OnClientEvent:Connect(function(seedName)
-            if WEBHOOK_ENABLED and seedsFrame and seedName then
-                pcall(function()
-                    -- Verificar se é uma semente prioritária
-                    local isPriority = false
-                    for _, prioritySeed in ipairs(PRIORITY_SEEDS) do
-                        if seedName == prioritySeed then
-                            isPriority = true
-                            break
-                        end
-                    end
-                    
-                    if isPriority then
-                        -- Aguardar um pouco para o estoque ser atualizado
-                        task.wait(0.5)
-                        
-                        local seedFrame = seedsFrame:FindFirstChild(seedName)
-                        if seedFrame and seedFrame:FindFirstChild("Stock") then
-                            local currentStock = getStock(seedFrame.Stock.Text)
-                            local lastStock = lastStockValues[seedName] or 0
-                            
-                            -- Se o estoque mudou
-                            if currentStock ~= lastStock then
-                                local stockChange = currentStock - lastStock
-                                local changeText = ""
-                                
-                                if stockChange > 0 then
-                                    changeText = "📈 **Estoque aumentou:** +" .. stockChange
-                                else
-                                    changeText = "📉 **Estoque diminuiu:** " .. stockChange
-                                end
-                                
-                                local description = "**" .. seedName .. "** - Mudança de estoque detectada!\n\n"
-                                description = description .. "🏪 **Loja:** Seeds Shop\n"
-                                description = description .. "📦 **Estoque anterior:** x" .. lastStock .. "\n"
-                                description = description .. "📦 **Estoque atual:** x" .. currentStock .. "\n"
-                                description = description .. changeText .. "\n"
-                                description = description .. "🎯 **Auto-Buy:** " .. (AutoBuyEnabled and "Ativo" or "Inativo") .. "\n"
-                                description = description .. "⏰ **Detectado em:** " .. os.date("%H:%M:%S") .. " (TEMPO REAL!)"
-                                
-                                sendWebhook(
-                                    "⚡ ESTOQUE ATUALIZADO EM TEMPO REAL!",
-                                    description,
-                                    3447003 -- Azul
-                                )
-                            end
-                            
-                            -- Atualizar valor do estoque
-                            lastStockValues[seedName] = currentStock
-                        end
-                    end
-                end)
-            end
-        end)
-    end
-    
-    -- Evento quando todos os estoques de plantas são atualizados
-    local updatePlantStocksRemote = remotes:FindFirstChild("UpdatePlantStocks")
-    if updatePlantStocksRemote and updatePlantStocksRemote.OnClientEvent then
-        updatePlantStocksRemote.OnClientEvent:Connect(function()
-            if WEBHOOK_ENABLED and seedsFrame then
-                pcall(function()
-                    -- Verificar todas as sementes prioritárias
-                    for _, seedName in ipairs(PRIORITY_SEEDS) do
-                        local seedFrame = seedsFrame:FindFirstChild(seedName)
-                        if seedFrame and seedFrame:FindFirstChild("Stock") then
-                            local currentStock = getStock(seedFrame.Stock.Text)
-                            local lastStock = lastStockValues[seedName] or 0
-                            
-                            -- Se o estoque mudou
-                            if currentStock ~= lastStock then
-                                local stockChange = currentStock - lastStock
-                                local changeText = ""
-                                
-                                if stockChange > 0 then
-                                    changeText = "📈 **Estoque aumentou:** +" .. stockChange
-                                else
-                                    changeText = "📉 **Estoque diminuiu:** " .. stockChange
-                                end
-                                
-                                local description = "**" .. seedName .. "** - Mudança de estoque detectada!\n\n"
-                                description = description .. "🏪 **Loja:** Seeds Shop\n"
-                                description = description .. "📦 **Estoque anterior:** x" .. lastStock .. "\n"
-                                description = description .. "📦 **Estoque atual:** x" .. currentStock .. "\n"
-                                description = description .. changeText .. "\n"
-                                description = description .. "🎯 **Auto-Buy:** " .. (AutoBuyEnabled and "Ativo" or "Inativo") .. "\n"
-                                description = description .. "⏰ **Detectado em:** " .. os.date("%H:%M:%S") .. " (RESTOCK GERAL!)"
-                                
-                                sendWebhook(
-                                    "🔄 RESTOCK GERAL DETECTADO!",
-                                    description,
-                                    16776960 -- Amarelo
-                                )
-                            end
-                            
-                            -- Atualizar valor do estoque
-                            lastStockValues[seedName] = currentStock
-                        end
-                    end
-                end)
-            end
-        end)
-    end
-end
-
--- Configurar detecção em tempo real com verificação de segurança
-pcall(function()
-    setupRealtimeStockDetection()
 end)
 
 -- Nova aba de Webhook
@@ -2553,7 +2034,6 @@ WebhookTab:CreateToggle({
             WEBHOOK_ENABLED = false
         else
             showNotification("Webhook", "Webhook " .. (value and "ativado" or "desativado") .. "!")
-            saveWebhookSettings() -- Salvar configurações automaticamente
         end
     end
 })
@@ -2612,10 +2092,11 @@ WebhookTab:CreateButton({
         
         -- Simular notificação de brainrot detalhada (Secret)
         local description = "**Matteo** apareceu no mapa!\n\n"
+        description = description .. "🤖 **Brainrot:** Matteo\n"
         description = description .. "📊 **Raridade:** Secret\n"
         description = description .. "❤️ **Vida:** 2500 / 3000\n"
         description = description .. "📏 **Distância:** 25 studs\n"
-        description = description .. "👤 **Dono:** guilhermeolol201\n"
+        description = description .. "👤 **Dono (ID):** 12345678\n"
         description = description .. "📍 **Posição:** 123, 45, 678\n\n"
         description = description .. "🎯 **Sistema de combate ativo para eliminar!**"
         
@@ -2629,37 +2110,6 @@ WebhookTab:CreateButton({
             showNotification("Teste", "Notificação detalhada enviada com sucesso!")
         else
             showNotification("Erro", "Falha ao enviar notificação detalhada!")
-        end
-    end
-})
-
-WebhookTab:CreateButton({
-    Name = "Testar Monitoramento de Estoque",
-    Callback = function()
-        if WEBHOOK_URL == "" then
-            showNotification("Erro", "Configure a URL do webhook primeiro!")
-            return
-        end
-        
-        -- Simular notificação de mudança de estoque em tempo real
-        local description = "**Shroombino Seed** - Mudança de estoque detectada!\n\n"
-        description = description .. "🏪 **Loja:** Seeds Shop\n"
-        description = description .. "📦 **Estoque anterior:** x0\n"
-        description = description .. "📦 **Estoque atual:** x5\n"
-        description = description .. "📈 **Estoque aumentou:** +5\n"
-        description = description .. "🎯 **Auto-Buy:** Ativo\n"
-        description = description .. "⏰ **Detectado em:** " .. os.date("%H:%M:%S") .. " (TEMPO REAL!)"
-        
-        local success = sendWebhook(
-            "⚡ ESTOQUE ATUALIZADO EM TEMPO REAL!",
-            description,
-            3447003 -- Azul
-        )
-        
-        if success then
-            showNotification("Teste", "Notificação de estoque enviada com sucesso!")
-        else
-            showNotification("Erro", "Falha ao enviar notificação de estoque!")
         end
     end
 })
@@ -2713,15 +2163,15 @@ WebhookTab:CreateButton({
 })
 
 WebhookTab:CreateSection("Notificações de Plantas")
-WebhookTab:CreateLabel("🌱 Sementes Monitoradas:")
+WebhookTab:CreateLabel("🌱 APENAS estas 8 sementes específicas:")
 WebhookTab:CreateLabel("• Shroombino Seed")
 WebhookTab:CreateLabel("• Mango Seed")
 WebhookTab:CreateLabel("• Carnivorous Plant Seed")
 WebhookTab:CreateLabel("• Mr Carrot Seed")
 WebhookTab:CreateLabel("• Tomatrio Seed")
-WebhookTab:CreateLabel("• Cocotank Seed")
 WebhookTab:CreateLabel("• Watermelon Seed")
 WebhookTab:CreateLabel("• Grape Seed")
+WebhookTab:CreateLabel("• Cocotank Seed")
 
 WebhookTab:CreateSection("Notificações de Brainrots")
 WebhookTab:CreateToggle({
@@ -2731,7 +2181,6 @@ WebhookTab:CreateToggle({
     Callback = function(value)
         NOTIFY_SECRET_BRAINROTS = value
         showNotification("Webhook", "Notificação de brainrots secretos " .. (value and "ativada" or "desativada") .. "!")
-        saveWebhookSettings() -- Salvar configurações automaticamente
     end
 })
 
@@ -2742,7 +2191,6 @@ WebhookTab:CreateToggle({
     Callback = function(value)
         NOTIFY_LIMITED_BRAINROTS = value
         showNotification("Webhook", "Notificação de brainrots limitados " .. (value and "ativada" or "desativada") .. "!")
-        saveWebhookSettings() -- Salvar configurações automaticamente
     end
 })
 
@@ -2761,22 +2209,6 @@ WebhookTab:CreateLabel("• Use Synapse X, Script-Ware ou KRNL")
 WebhookTab:CreateLabel("• Alguns executores bloqueiam HTTP")
 WebhookTab:CreateLabel("• Notificações são salvas automaticamente")
 WebhookTab:CreateLabel("• Tente usar webhook externo (veja abaixo)")
-
-WebhookTab:CreateSection("🎯 Foco Específico")
-WebhookTab:CreateLabel("• Apenas Brainrots SECRET e LIMITED")
-WebhookTab:CreateLabel("• APENAS as 8 sementes específicas da lista")
-WebhookTab:CreateLabel("• Não notifica outras plantas")
-WebhookTab:CreateLabel("• Notificações otimizadas e detalhadas")
-
-WebhookTab:CreateSection("📦 Monitoramento de Estoque")
-WebhookTab:CreateLabel("⚡ DETECÇÃO EM TEMPO REAL!")
-WebhookTab:CreateLabel("• Conectado aos eventos do jogo")
-WebhookTab:CreateLabel("• Notifica INSTANTANEAMENTE quando muda")
-WebhookTab:CreateLabel("• Sementes prioritárias monitoradas:")
-WebhookTab:CreateLabel("  - Shroombino, Mango, Carnivorous Plant")
-WebhookTab:CreateLabel("  - Mr Carrot, Tomatrio, Cocotank")
-WebhookTab:CreateLabel("  - Watermelon, Grape")
-WebhookTab:CreateLabel("• Eventos: UpdStock + UpdatePlantStocks")
 
 WebhookTab:CreateButton({
     Name = "Ver Notificações Salvas",
@@ -2798,19 +2230,6 @@ WebhookTab:CreateButton({
     Callback = function()
         savedNotifications = {}
         showNotification("Notificações", "Notificações salvas limpas!")
-    end
-})
-
-WebhookTab:CreateButton({
-    Name = "Resetar Configurações",
-    Callback = function()
-        WEBHOOK_ENABLED = false
-        NOTIFY_SECRET_PLANTS = true
-        NOTIFY_MYTHIC_PLANTS = true
-        NOTIFY_SECRET_BRAINROTS = true
-        NOTIFY_LIMITED_BRAINROTS = true
-        saveWebhookSettings()
-        showNotification("Reset", "Configurações do webhook resetadas!")
     end
 })
 
@@ -2873,24 +2292,20 @@ sendNotification("🔥 BRAINROT SECRETO!", "Matteo detectado no mapa!")
     end
 })
 
--- Carregar configurações do webhook
-loadWebhookSettings()
-
 -- Carregar URL salva do webhook
 if isfile("PlantsVsBrainrot_WebhookURL.txt") then
     WEBHOOK_URL = readfile("PlantsVsBrainrot_WebhookURL.txt")
     if WEBHOOK_URL ~= "" then
         showNotification("Webhook", "URL do webhook carregada automaticamente!")
+        WEBHOOK_ENABLED = true
         
-        -- Notificar inicialização do script apenas se webhook estiver ativo
-        if WEBHOOK_ENABLED then
-            task.wait(3) -- Aguardar 3 segundos para tudo carregar
-            sendWebhook(
-                "🚀 SONINHUB v2.0 INICIADO!",
-                "**SoninHub v2.0** foi iniciado com sucesso!\n\n✅ Auto-Buy: Ativo\n✅ Combat: Ativo\n✅ Anti-Lag: Ativo\n✅ Anti-AFK: Ativo\n✅ Webhook: Conectado\n\n🎯 Monitorando plantas secretas e brainrots especiais!",
-                3447003 -- Azul
-            )
-        end
+        -- Notificar inicialização do script
+        task.wait(3) -- Aguardar 3 segundos para tudo carregar
+        sendWebhook(
+            "🚀 SONINHUB v2.0 INICIADO!",
+            "**SoninHub v2.0** foi iniciado com sucesso!\n\n✅ Auto-Buy: Ativo\n✅ Combat: Ativo\n✅ Anti-Lag: Ativo\n✅ Anti-AFK: Ativo\n✅ Webhook: Conectado\n\n🎯 Monitorando plantas secretas e brainrots especiais!",
+            3447003 -- Azul
+        )
     end
 end
 
