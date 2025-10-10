@@ -734,6 +734,18 @@ local CHECK_STOCK = true
 local AUTO_COLLECT_MONEY = true -- Coletar dinheiro automaticamente (equipar melhores brainrots)
 local COLLECT_MONEY_COOLDOWN = 300 -- Cooldown de 300 segundos (5 minutos)
 
+-- Lista APENAS das 8 sementes específicas que você quer notificar
+local PRIORITY_SEEDS = {
+    "Shroombino Seed",
+    "Mango Seed", 
+    "Carnivorous Plant Seed",
+    "Mr Carrot Seed",
+    "Tomatrio Seed",
+    "Watermelon Seed",
+    "Grape Seed",
+    "Cocotank Seed"
+}
+
 -- Sementes específicas das imagens
 local PremiumSeeds = {
     "Shroombino Seed",
@@ -1844,18 +1856,6 @@ local function sendWebhookEmbed(title, description, color)
     return success
 end
 
--- Lista APENAS das 8 sementes específicas que você quer notificar
-local PRIORITY_SEEDS = {
-    "Shroombino Seed",
-    "Mango Seed", 
-    "Carnivorous Plant Seed",
-    "Mr Carrot Seed",
-    "Tomatrio Seed",
-    "Watermelon Seed",
-    "Grape Seed",
-    "Cocotank Seed"
-}
-
 -- Função para verificar APENAS as 8 sementes específicas no shop
 local function checkSecretPlants()
     if not seedsFrame then return end
@@ -1898,6 +1898,70 @@ end
 local lastNotifiedBrainrots = {}
 local lastNotifiedPlants = {}
 
+-- Lista de brainrots Secret e Limited para notificar
+local SECRET_BRAINROTS = {
+    "Vacca Saturno Saturnita",
+    "Crazylone Pizalone",
+    "Brri Brri Bicus Dicus Bombicus",
+    "Garamararam",
+    "Blueberrinni Octopussini",
+    "Los Tralaleritos",
+    "Pot Hotspot",
+    "67"
+}
+
+local LIMITED_BRAINROTS = {
+    "Los Sekolitos",
+    "Wardenelli Brickatoni",
+    -- Adicione outros brainrots limitados aqui
+}
+
+-- Função para obter o nome real do brainrot de ReplicatedStorage.Assets.Brainrots
+local function getRealBrainrotName(brainrot)
+    local replicatedStorage = game:GetService("ReplicatedStorage")
+    
+    -- Tentar pegar o nome da configuração do brainrot
+    local configName = brainrot:GetAttribute("Config") or brainrot:GetAttribute("BrainrotConfig")
+    
+    if configName and replicatedStorage:FindFirstChild("Assets") then
+        local assets = replicatedStorage.Assets
+        if assets:FindFirstChild("Brainrots") then
+            local brainrots = assets.Brainrots
+            local brainrotAsset = brainrots:FindFirstChild(configName)
+            if brainrotAsset then
+                return configName -- Retorna o nome do asset
+            end
+        end
+    end
+    
+    -- Se não encontrou pelo atributo Config, tentar procurar pelo nome ou outros atributos
+    local rarity = brainrot:GetAttribute("Rarity")
+    
+    if rarity and replicatedStorage:FindFirstChild("Assets") then
+        local assets = replicatedStorage.Assets
+        if assets:FindFirstChild("Brainrots") then
+            local brainrots = assets.Brainrots
+            
+            -- Procurar por todos os brainrots com a mesma raridade
+            for _, brainrotAsset in ipairs(brainrots:GetChildren()) do
+                local assetRarity = brainrotAsset:GetAttribute("Rarity")
+                if assetRarity == rarity then
+                    -- Verificar se algum atributo do brainrot corresponde ao nome do asset
+                    local brainrotId = brainrot:GetAttribute("Id") or brainrot:GetAttribute("UUID") or brainrot.Name
+                    local assetId = brainrotAsset:GetAttribute("Id") or brainrotAsset.Name
+                    
+                    if brainrotId == assetId or brainrotId == brainrotAsset.Name then
+                        return brainrotAsset.Name
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Se ainda não encontrou, retornar o nome do modelo
+    return brainrot.Name
+end
+
 -- Função de debug para mostrar todos os atributos do brainrot
 local function debugBrainrotInfo(brainrot)
     print("🔍 DEBUG BRAINROT:")
@@ -1906,59 +1970,29 @@ local function debugBrainrotInfo(brainrot)
     
     -- Listar todos os atributos
     local attributes = brainrot:GetAttributes()
+    print("📋 Atributos:")
     for attrName, attrValue in pairs(attributes) do
-        print("Atributo " .. attrName .. ": " .. tostring(attrValue))
+        print("  • " .. attrName .. ": " .. tostring(attrValue))
     end
     
     -- Listar filhos importantes
+    print("👶 Filhos:")
     for _, child in ipairs(brainrot:GetChildren()) do
         if child:IsA("StringValue") or child:IsA("IntValue") or child:IsA("BoolValue") then
-            print("Filho " .. child.Name .. " (" .. child.ClassName .. "): " .. tostring(child.Value))
+            print("  • " .. child.Name .. " (" .. child.ClassName .. "): " .. tostring(child.Value))
         end
     end
+    
+    -- Tentar buscar o nome real em ReplicatedStorage
+    local realName = getRealBrainrotName(brainrot)
+    print("✅ Nome Real Encontrado: " .. realName)
     print("---")
 end
 
 -- Função para obter informações detalhadas do brainrot
 local function getBrainrotInfo(brainrot)
-    -- Tentar obter o nome real do brainrot de diferentes formas
-    local brainrotName = brainrot.Name
-    
-    -- Verificar se tem atributo DisplayName ou Name
-    local displayName = brainrot:GetAttribute("DisplayName") or brainrot:GetAttribute("Name")
-    if displayName and displayName ~= "" then
-        brainrotName = displayName
-    end
-    
-    -- Se o nome ainda for um ID (contém hífens), tentar outras formas
-    if brainrotName:match("^[a-f0-9%-]+$") then
-        -- É um ID, tentar encontrar o nome real
-        local realName = brainrot:GetAttribute("BrainrotName") or 
-                        brainrot:GetAttribute("CharacterName") or
-                        brainrot:GetAttribute("ModelName") or
-                        brainrot:GetAttribute("BrainrotType") or
-                        brainrot:GetAttribute("Type")
-        
-        if realName and realName ~= "" then
-            brainrotName = realName
-        else
-            -- Tentar procurar em filhos do brainrot por nomes
-            for _, child in ipairs(brainrot:GetChildren()) do
-                if child:IsA("StringValue") or child:IsA("StringValue") then
-                    if child.Name == "Name" or child.Name == "DisplayName" or child.Name == "BrainrotName" then
-                        brainrotName = child.Value
-                        break
-                    end
-                end
-            end
-            
-            -- Se ainda não encontrou, usar um nome genérico baseado na raridade
-            if brainrotName:match("^[a-f0-9%-]+$") then
-                local rarity = brainrot:GetAttribute("Rarity") or "Unknown"
-                brainrotName = "Brainrot " .. rarity .. " #" .. brainrotName:sub(1, 4)
-            end
-        end
-    end
+    -- Buscar o nome real do brainrot em ReplicatedStorage.Assets.Brainrots
+    local brainrotName = getRealBrainrotName(brainrot)
     
     local info = {
         name = brainrotName,
@@ -2317,6 +2351,86 @@ WebhookTab:CreateButton({
         lastNotifiedBrainrots = {}
         lastNotifiedPlants = {}
         showNotification("Cache", "Cache de notificações limpo!")
+    end
+})
+
+WebhookTab:CreateButton({
+    Name = "Listar Todos os Brainrots (ReplicatedStorage)",
+    Callback = function()
+        local replicatedStorage = game:GetService("ReplicatedStorage")
+        
+        if replicatedStorage:FindFirstChild("Assets") then
+            local assets = replicatedStorage.Assets
+            if assets:FindFirstChild("Brainrots") then
+                local brainrots = assets.Brainrots
+                local brainrotList = {}
+                
+                print("📋 LISTA COMPLETA DE BRAINROTS EM REPLICATEDSTORAGE:")
+                print("=" .. string.rep("=", 50))
+                
+                for _, brainrot in ipairs(brainrots:GetChildren()) do
+                    local rarity = brainrot:GetAttribute("Rarity") or "Unknown"
+                    local info = "• " .. brainrot.Name .. " [" .. rarity .. "]"
+                    print(info)
+                    table.insert(brainrotList, brainrot.Name)
+                end
+                
+                print("=" .. string.rep("=", 50))
+                print("Total: " .. #brainrotList .. " brainrots encontrados!")
+                
+                showNotification("Brainrots", "Lista completa no console! Total: " .. #brainrotList)
+            else
+                showNotification("Erro", "Assets.Brainrots não encontrado!")
+            end
+        else
+            showNotification("Erro", "Assets não encontrado em ReplicatedStorage!")
+        end
+    end
+})
+
+WebhookTab:CreateButton({
+    Name = "Listar Brainrots Secret e Limited",
+    Callback = function()
+        local replicatedStorage = game:GetService("ReplicatedStorage")
+        
+        if replicatedStorage:FindFirstChild("Assets") then
+            local assets = replicatedStorage.Assets
+            if assets:FindFirstChild("Brainrots") then
+                local brainrots = assets.Brainrots
+                local secretCount = 0
+                local limitedCount = 0
+                
+                print("🔥 BRAINROTS SECRET E LIMITED:")
+                print("=" .. string.rep("=", 50))
+                
+                print("\n🔥 SECRET:")
+                for _, brainrot in ipairs(brainrots:GetChildren()) do
+                    local rarity = brainrot:GetAttribute("Rarity")
+                    if rarity == "Secret" then
+                        print("  • " .. brainrot.Name)
+                        secretCount = secretCount + 1
+                    end
+                end
+                
+                print("\n⚡ LIMITED:")
+                for _, brainrot in ipairs(brainrots:GetChildren()) do
+                    local rarity = brainrot:GetAttribute("Rarity")
+                    if rarity == "Limited" then
+                        print("  • " .. brainrot.Name)
+                        limitedCount = limitedCount + 1
+                    end
+                end
+                
+                print("=" .. string.rep("=", 50))
+                print("Total: " .. secretCount .. " Secret, " .. limitedCount .. " Limited")
+                
+                showNotification("Brainrots Raros", "Secret: " .. secretCount .. " | Limited: " .. limitedCount)
+            else
+                showNotification("Erro", "Assets.Brainrots não encontrado!")
+            end
+        else
+            showNotification("Erro", "Assets não encontrado em ReplicatedStorage!")
+        end
     end
 })
 
