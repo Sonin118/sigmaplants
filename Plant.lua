@@ -5,7 +5,406 @@ local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
+-- ========================================================================================
+-- APLICAR FFLAGS DE OTIMIZAÇÃO EXTREMA (ANTES DE TUDO)
+-- ========================================================================================
+local function applyOptimizationFlags()
+    local flags = {
+        -- Performance & Otimização
+        ["DFFlagDebugPerfMode"] = "True",
+        ["DFIntMaxFrameBufferSize"] = "4",
+        ["DFIntTaskSchedulerTargetFps"] = "99999",
+        ["FFlagTaskSchedulerLimitTargetFpsTo2402"] = "False",
+        ["FFlagFastGPULightCulling3"] = "True",
+        ["DFIntHttpCurlConnectionCacheSize"] = "134217728",
+        ["FFlagRenderGpuTextureCompressor"] = "True",
+        
+        -- Network Otimização
+        ["FFlagUserPreferTCPOverUDP"] = "True",
+        ["FFlagUserReducePacketLossEffects"] = "True",
+        ["FLogNetwork"] = "7",
+        ["FFlagUserDisableNetworkStutter"] = "True",
+        ["DFIntNetworkLatencyTolerance"] = "0",
+        ["FFlagUserNetworkPingOptimizer"] = "True",
+        ["FFlagOptimizeNetwork"] = "True",
+        ["FFlagUserOptimizeNetworkBufferManagement"] = "True",
+        ["FFlagNewNetworking"] = "False",
+        ["FFlagOptimizeNetworkTransport"] = "True",
+        ["FFlagOptimizeNetworkRouting"] = "True",
+        ["FFlagUserLowLatencyNetwork"] = "True",
+        ["FFlagOptimizePacketHandling"] = "True",
+        ["DFIntPlayerNetworkUpdateRate"] = "256",
+        ["DFIntServerPhysicsUpdateRate"] = "60",
+        ["DFIntServerTickRate"] = "60",
+        ["FFlagOptimizeServerTickRate"] = "True",
+        ["DFIntPlayerNetworkUpdateQueueSize"] = "20",
+        ["FFlagDisableNetworkLoadEmphases"] = "True",
+        ["FFlagDisableNetworkInterpolationBuffer"] = "True",
+        ["FFlagUserDisableNetworkPrediction"] = "True",
+        ["FFlagUserDisableNetworkInterpolation"] = "True",
+        ["FFlagUserDisableNetworkLagCompensation"] = "True",
+        ["FFlagForceClientPredictionReduction"] = "True",
+        ["FFlagUserForceMinimalNetworkUpdates"] = "True",
+        ["FFlagUserOptimizeNetworkBuffering"] = "True",
+        ["FFlagUserReduceServerPolling"] = "True",
+        
+        -- Gráficos - Força Baixa Qualidade
+        ["FFlagForceLowGraphicsMode"] = "True",
+        ["FFlagForceLowResAnimation"] = "True",
+        ["FFlagForceLowDensityParticles"] = "True",
+        ["FFlagForceLowLightingQuality"] = "True",
+        ["FFlagForceDisableGlobalShadows"] = "True",
+        ["FFlagNoShadows"] = "True",
+        ["FFlagDisableAntialiasing"] = "True",
+        ["FFlagForceLowMemoryMode"] = "True",
+        ["FFlagMinimalMode"] = "True",
+        ["FFlagForceMinimalMemoryFootprint"] = "True",
+        ["FFlagForceMinimalRendering"] = "True",
+        ["FFlagForceMinimalPhysicsSteps"] = "True",
+        ["FFlagForceMinimalEffectLoad"] = "True",
+        ["FFlagForceMinimalAnimationBlending"] = "True",
+        ["FFlagForceMinimalCameraProcessing"] = "True",
+        ["FFlagForceMinimalInputPolling"] = "True",
+        ["FFlagForceMinimalStartup"] = "True",
+        
+        -- Desabilitar Efeitos Visuais
+        ["FFlagDisableAtmosphereEffects"] = "True",
+        ["FFlagDisableReflectionProbes"] = "True",
+        ["FFlagDisableGPUOcclusion"] = "True",
+        ["FFlagDisableMuzzleflash"] = "True",
+        ["FFlagDisableDecals"] = "True",
+        ["FFlagDisableDynamicFog"] = "True",
+        ["FFlagDisableDynamicWeather"] = "True",
+        ["FFlagDisableEnvironmentEffects"] = "True",
+        ["FFlagDisableParticles"] = "True",
+        ["FFlagRemoveParticles"] = "True",
+        ["FFlagDisableSoftParticles"] = "True",
+        ["FFlagDisableAccessoryPhysics"] = "True",
+        ["FFlagDisableAllLensEffects"] = "True",
+        ["FFlagDisablePostFx"] = "True",
+        ["FFlagDisableVolumetricLighting"] = "True",
+        ["FFlagDisableCloudRendering"] = "True",
+        ["FFlagDisableFoliage"] = "True",
+        ["FFlagDisableGlobalReflection"] = "True",
+        ["FFlagDisableTextureFiltering"] = "True",
+        ["FFlagDisableShadowMaps"] = "True",
+        ["FFlagDisableDetailModels"] = "True",
+        ["FFlagDisableAnimations"] = "True",
+        ["FFlagDisableStartupEffects"] = "True",
+        ["FFlagDisableAudio"] = "True",
+        
+        -- Câmera & Shake
+        ["FFlagCameraClientShakeEnabled"] = "False",
+        ["FFlagUserDisableFrameRateBasedShaking"] = "False",
+        ["FFlagUserDisableDynamicHeadBob"] = "True",
+        ["FFlagUserDisableDynamicCameraShaking"] = "True",
+        ["FFlagUserDisableExplosionShake"] = "True",
+        ["FFlagUserDisableDamageShake"] = "True",
+        ["FFlagUserCameraShake"] = "False",
+        ["FFlagUserDisableCameraBob"] = "True",
+        ["FFlagUserDisableDeltaTimeShaking"] = "True",
+        ["FFlagUserForceStableCameraUpdate"] = "True",
+        ["FFlagUserLimitCameraFrameRate"] = "True",
+        
+        -- Post Processing
+        ["FFlagUserDisableVignette"] = "True",
+        ["FFlagUserDisableMotionBlur"] = "True",
+        ["FFlagUserDisablePostLightingEffects"] = "True",
+        ["FFlagUserDisableSaturationCorrection"] = "True",
+        ["FFlagUserDisableAmbientOcclusion"] = "True",
+        ["FFlagUserDisableBloom"] = "True",
+        ["FFlagUserDisableDepthOfField"] = "True",
+        ["FFlagUserDisableColorCorrection"] = "True",
+        ["FFlagUserDisableSunRays"] = "True",
+        
+        -- Terreno & Água
+        ["FFlagUserDisableTerrainWaves"] = "True",
+        ["FFlagUserDisableTerrainDecoration"] = "True",
+        ["FFlagUserDisableWaterPhysics"] = "True",
+        ["FFlagForceSimpleTerrain"] = "True",
+        ["FIntTerrainArraySliceSize"] = "0",
+        ["FIntTerrainOTAMaxTextureSize"] = "1024",
+        
+        -- Física
+        ["FFlagForceCPUPhysics"] = "True",
+        ["DFIntDefaultElasticity"] = "100000",
+        ["DFIntCollisionSolverLinearThreshold"] = "100000",
+        ["DFIntCollisionSolverAngularThreshold"] = "100000",
+        ["DFIntCollisionSolverExpansionFactor"] = "100000",
+        ["DFIntContactManagerMaxContactDistanceInThousandths"] = "100000",
+        ["DFIntContactManagerSeparationAllowanceInThousandths"] = "100000",
+        ["DFIntContactManagerContactBreakToleranceInThousandths"] = "100000",
+        ["DFIntPhysicsDecompGeometryError"] = "100000",
+        ["DFIntCharacterDensityScale"] = "100000",
+        ["FFlagDisablePhysics"] = "True",
+        ["FFlagUserForceSingleCorePhysics"] = "True",
+        
+        -- Threads & Task Scheduler
+        ["DFIntTaskSchedulerThreadPoolThreadsMin"] = "8",
+        ["DFIntTaskSchedulerThreadPoolThreads"] = "64",
+        ["DFIntTaskSchedulerThreadPoolThreadsMax"] = "64",
+        ["DFIntTaskSchedulerMaxThreads"] = "64",
+        ["DFIntTaskSchedulerMinThreads"] = "8",
+        ["DFIntTaskSchedulerThreadPoolThreadsIdleTimeout"] = "10",
+        ["DFIntTaskSchedulerThreadPoolThreadsIncreaseValue"] = "8",
+        ["DFIntTaskSchedulerThreadPoolThreadsDecreaseValue"] = "8",
+        ["DFIntTaskSchedulerThreadPoolThreadsIncreaseFrequency"] = "60",
+        ["DFIntTaskSchedulerThreadPoolThreadsDecreaseFrequency"] = "60",
+        ["DFIntTaskSchedulerThreadPoolThreadsPriority"] = "10",
+        ["DFIntTaskSchedulerThreadPoolThreadsStackSize"] = "1024",
+        
+        -- Texturas & Meshes
+        ["FIntUITextureMaxRenderTextureSize"] = "1024",
+        ["DFIntTextureQualityOverride"] = "0",
+        ["FIntDebugTextureManagerSkipMips"] = "8",
+        ["FIntMeshContentProviderForceCacheSize"] = "268435456",
+        ["FFlagForceTextureReduction"] = "True",
+        ["FFlagUserDisableStreamingTextures"] = "True",
+        ["FFlagUserDisableStreamingRegionMesh"] = "True",
+        ["FFlagPreloadTextureItemsOption4"] = "True",
+        
+        -- Iluminação & Sombras
+        ["FFlagNoDynamicLighting"] = "True",
+        ["FFlagForceVertexLightingOnly"] = "True",
+        ["FFlagForceStaticShadows"] = "True",
+        ["FIntRenderShadowIntensity"] = "0",
+        ["FIntRenderShadowmapBias"] = "0",
+        ["FIntRenderLocalLightUpdatesMin"] = "1",
+        ["FIntRenderLocalLightUpdatesMax"] = "1",
+        ["FIntRenderLocalLightFadeInMs_enabled"] = "99999",
+        
+        -- Streaming & Assets
+        ["FFlagUserAggressiveStreamingUnloads"] = "True",
+        ["FFlagUserSkipNonEssentialAssets"] = "True",
+        ["FFlagUserAggressiveAssetPurge"] = "True",
+        ["FFlagForceAggressiveAssetGC"] = "True",
+        ["FFlagUserAggressiveMeshStreaming"] = "True",
+        ["FFlagUserDisableStreamingPause"] = "True",
+        ["FFlagForceInstantLoad"] = "True",
+        ["DFIntAssetPreloadMaxConcurrentRequests"] = "200",
+        
+        -- Culling & LOD
+        ["FFlagForceMeshCulling"] = "True",
+        ["DFIntCSGLevelOfDetailSwitchingDistance"] = "0",
+        ["DFIntCSGLevelOfDetailSwitchingDistanceL12"] = "0",
+        ["DFIntCSGLevelOfDetailSwitchingDistanceL23"] = "0",
+        ["DFIntCSGLevelOfDetailSwitchingDistanceL34"] = "0",
+        ["DFIntAnimationLodFacsDistanceMin"] = "0",
+        ["DFIntAnimationLodFacsDistanceMax"] = "0",
+        ["DFIntAnimationLodFacsVisibilityDenominator"] = "0",
+        ["FIntFRMMaxGrassDistance"] = "0",
+        ["FIntRenderGrassDetailStrands"] = "0",
+        
+        -- Simplificação de Modelos
+        ["FFlagForceSimplifiedAvatars"] = "True",
+        ["FFlagForceSimplifiedMeshColliders"] = "True",
+        ["FFlagForceSimpleEffects"] = "True",
+        
+        -- Particle & Effects
+        ["FIntSSAOMipLevels"] = "0",
+        ["FFlagNoSplashEffects"] = "True",
+        ["FFlagCleanDrops"] = "True",
+        ["FFlagUserHideCharacterParticlesInFirstPerson"] = "True",
+        
+        -- Decals & Filtering
+        ["FFlagUserDisableDecalFiltering"] = "True",
+        ["FFlagUserDisableSurfaceAppearance"] = "True",
+        
+        -- Misc Otimização
+        ["FFlagPreloadMinimalFonts"] = "True",
+        ["FFlagCommitToGraphicsQualityFix"] = "True",
+        ["FFlagFixGraphicsQuality"] = "True",
+        ["FFlagHandleAltEnterFullscreenManually"] = "False",
+        ["FFlagDebugGraphicsPreferD3D11"] = "True",
+        ["FFlagNewLightAttenuation"] = "True",
+        ["FFlagForceFrameSync"] = "True",
+        ["FFlagForceNoGlassRefraction"] = "True",
+        ["FFlagDisableForceDisableWeather"] = "True",
+        ["FFlagGlobalWindRendering"] = "false",
+        ["FFlagCloudsReflectOnWater"] = "False",
+        ["FFlagEnableAudioOutputDevice"] = "false",
+        ["FFlagDebugDisableOTAMaterialTexture"] = "true",
+        
+        -- RakNet
+        ["DFIntRaknetBandwidthPingSendEveryXSeconds"] = "1",
+        ["DFIntRakNetMtuValue1InBytes"] = "1280",
+        ["DFIntRakNetMtuValue2InBytes"] = "1240",
+        ["DFIntRakNetMtuValue3InBytes"] = "1200",
+        ["DFIntRakNetNakResendDelayRttPercent"] = "50",
+        ["DFIntRakNetNakResendDelayMs"] = "10",
+        ["DFIntRakNetNakResendDelayMsMax"] = "100",
+        ["DFIntRakNetResendRttMultiple"] = "1",
+        ["DFIntRakNetLoopMs"] = "1",
+        ["DFIntRakNetResendBufferArrayLength"] = "1024",
+        ["DFIntRakNetClockDriftAdjustmentPerPingMillisecond"] = "100",
+        ["DFFlagSampleAndRefreshRakPing"] = "False",
+        ["FFlagDontCreatePingJob"] = "True",
+        ["FFlagPingSpoof"] = "False",
+        
+        -- Codec & Packets
+        ["DFIntCodecMaxOutgoingFrames"] = "10000",
+        ["DFIntCodecMaxIncomingPackets"] = "200",
+        ["DFIntMaxProcessPacketsStepsPerCyclic"] = "5000",
+        ["DFIntMaxProcessPacketsStepsAccumulated"] = "0",
+        ["DFIntLargePacketQueueSizeCutoffMB"] = "1000",
+        
+        -- Delays & Timing
+        ["DFIntFeatureADelay"] = "0",
+        ["DFIntWaitOnRecvFromLoopEndedMS"] = "100",
+        ["DFIntWaitOnUpdateNetworkLoopEndedMS"] = "100",
+        ["FIntFullscreenTitleBarTriggerDelayMillis"] = "3600000",
+        ["DFIntAutoAttackDelay"] = "0",
+        
+        -- Telemetria - DESABILITAR TUDO
+        ["FFlagDisableAllTelemetry"] = "True",
+        ["FFlagDebugDisableTelemetryV2Counter"] = "True",
+        ["FFlagDebugDisableTelemetryPoint"] = "True",
+        ["FFlagDebugDisableTelemetryEphemeralStat"] = "True",
+        ["FFlagDebugDisableTelemetryEphemeralCounter"] = "True",
+        ["FFlagDebugDisableTelemetryV2Event"] = "True",
+        ["FFlagDebugDisableTelemetryV2Stat"] = "True",
+        ["FFlagDebugDisableTelemetryEventIngest"] = "True",
+        ["DFStringTelemetryV2Url"] = "null",
+        ["DFFlagDisableFastLogTelemetry"] = "True",
+        ["DFFlagRobloxTelemetryAddDeviceRAM"] = "False",
+        ["DFFlagRobloxTelemetryAddDeviceRAMPointsV2"] = "False",
+        ["DFFlagRemoveTelemetryFlushOnJobClose"] = "False",
+        ["DFFlagCollectAudioPluginTelemetry"] = "False",
+        ["DFFlagEnableSkipUpdatingGlobalTelemetryInfo2"] = "False",
+        ["DFFlagGpuVsCpuBoundTelemetry"] = "False",
+        ["DFFlagGraphicsQualityUsageTelemetry"] = "False",
+        ["DFFlagReportRenderDistanceTelemetry"] = "False",
+        ["DFFlagBrowserTrackerIdTelemetryEnabled"] = "False",
+        ["DFFlagSendRenderFidelityTelemetry"] = "False",
+        ["DFFlagRccLoadSoundLengthTelemetryEnabled"] = "False",
+        ["DFFlagBaseNetworkMetrics"] = "False",
+        ["DFFlagEmitSafetyTelemetryInCallbackEnable"] = "False",
+        ["DFFlagDSTelemetryV2ReplaceSeparator"] = "False",
+        ["DFFlagRobloxTelemetryV2PointEncoding"] = "False",
+        ["DFFlagEnableFmodErrorsTelemetry"] = "False",
+        ["DFFlagSimEnableBadMoverConstraintTelemetry"] = "False",
+        ["DFFlagEnableTelemetryV2FRMStats"] = "False",
+        ["DFFlagClientRolloutPhaseTelemetry"] = "False",
+        ["DFFlagReportAssetRequestV1Telemetry"] = "False",
+        ["DFFlagSimSolverSendPerfTelemetryToElasticSearch2"] = "False",
+        ["DFIntClientLightingTechnologyChangedTelemetryHundredthsPercent"] = "0",
+        ["DFIntClientLightingEnvmapPlacementTelemetryHundredthsPercent"] = "50",
+        ["DFIntContentProviderPreloadHangTelemetryHundredthsPercentage"] = "0",
+        ["FLogLoginTelemetry"] = "0",
+        
+        -- Anti-Cheat Bypass (CUIDADO - Pode causar ban)
+        ["FFlagAntiCheatDisableLogs"] = "True",
+        ["FFlagAntiCheatBypassForceLogout"] = "True",
+        ["FFlagAntiCheatBypassScriptDetection"] = "True",
+        ["FFlagAntiCheatAutoBypassNewDetectionMethods"] = "True",
+        ["FFlagAntiCheatAutoReconnectOnBan"] = "True",
+        ["FFlagAntiCheatDelayFlagging"] = "True",
+        ["FFlagAntiCheatNoKick"] = "True",
+        ["FFlagAntiCheatNoBan"] = "True",
+        ["FFlagAntiCheatDisableReportSystem"] = "True",
+        ["FFlagAntiCheatBypassAimAssistDetection"] = "True",
+        ["FFlagAntiCheatBypassSpeedCheck"] = "True",
+        ["FFlagAntiCheatBypassInstantKillDetection"] = "True",
+        ["FFlagAntiCheatBypassWalkSpeedCheck"] = "True",
+        ["FFlagAntiCheatRandomizedBehavior"] = "True",
+        ["FFlagAntiCheatBypassDamageModification"] = "True",
+        ["FFlagAntiCheatBypassHitboxModification"] = "True",
+        ["FFlagAntiCheatBypassServerChecks"] = "True",
+        ["FFlagAntiCheatDisableHeartbeatCheck"] = "True",
+        ["FFlagAntiCheatBypass"] = "True",
+        ["FFlagAntiCheatBypassTeleportDetection"] = "True",
+        ["FFlagAntiCheatBypassNoClipDetection"] = "True",
+        ["FFlagAntiCheatHideFromSpectators"] = "True",
+        ["FFlagAntiCheatReduceDetectionRate"] = "True",
+        ["FFlagAntiCheatRemoveSuspiciousActivity"] = "True",
+        ["FFlagAntiCheatHideModifiedFiles"] = "True",
+        ["FFlagAntiCheatDisableDetection"] = "True",
+        ["FFlagAntiCheatBypassMemoryScan"] = "True",
+        ["FFlagAntiCheatBypassAntiTeleport"] = "True",
+        ["FFlagAntiCheatAutoReconnectOnKick"] = "True",
+        ["FFlagAntiCheatBypassJumpPowerCheck"] = "True",
+        ["FFlagAntiCheatBypassAbilitySpamCheck"] = "True",
+        ["FFlagAntiCheatBypassAutoFarmDetection"] = "True",
+        ["FFlagAntiCheatFakeLegitStatus"] = "True",
+        
+        -- Custom Flags
+        ["FFlagblessedsul"] = "True",
+        ["FFlagSulprimeeBlessed"] = "True",
+        ["FFlaggodprime"] = "True",
+        ["FFlagFeatureAEnabled"] = "True",
+        ["FFlagFeatureBEnabled"] = "True",
+        ["FFlagFeatureCTest"] = "False",
+        
+        -- Combat
+        ["FFlagAutoAttackEnabled"] = "True",
+        ["FIntAttackSpeed"] = "20",
+        ["FFlagAutoBlock"] = "False",
+        ["FFlagHitDelay"] = "False",
+        
+        -- Camera
+        ["FIntCameraAngleVertical"] = "0",
+        ["FIntCameraAngleHorizontal"] = "90",
+        
+        -- Misc Settings
+        ["DFIntCanHideGuiGroupId"] = "32380007",
+        ["DFIntDebugFRMQualityLevelOverride"] = "1",
+        ["FIntDebugForceMSAASamples"] = "1",
+        ["FIntRobloxGuiBlurIntensity"] = "0",
+        ["FIntFontSizePadding"] = "0",
+        ["FIntHSRClusterSymmetryDistancePercent"] = "10000",
+        ["DFIntMegaReplicatorNetworkQualityProcessorUnit"] = "5",
+        ["DFIntOptimizePingThreshold"] = "50",
+        ["DFIntNetworkPrediction"] = "120",
+        ["DFFlagDisableDPIScale"] = "True",
+        ["DFFlagDebugPauseVoxelizer"] = "True",
+        ["DFFlagTextureQualityOverrideEnabled"] = "True",
+        ["FFlagOptimizeEntities"] = "True",
+        ["FFlagUserForceReducedEventRate"] = "True",
+        ["FFlagUserSkipIdleAnimations"] = "True",
+        ["FFlagUserSkipClientEventBloat"] = "True",
+        ["FFlagDisableClientHints"] = "True",
+        ["FFlagDisableEventBatching"] = "True",
+        ["FFlagUserDisableTimeBasedEffects"] = "True",
+        ["FFlagUserDisableHitEffect"] = "True",
+        ["FFlagUserDisableServerPacketLossEffects"] = "True",
+        ["FFlagForceLowUpdateFrequency"] = "True",
+        ["FFlagForceLowUpdateRate"] = "True",
+        ["FFlagForceLowPriorityEffects"] = "True",
+        ["FFlagDisableRenderSteadyState"] = "True"
+    }
+    
+    local successCount = 0
+    local failCount = 0
+    
+    print("🚀 APLICANDO FFLAGS DE OTIMIZAÇÃO EXTREMA...")
+    print("=" .. string.rep("=", 60))
+    
+    for flag, value in pairs(flags) do
+        local success, errorMsg = pcall(function()
+            setfflag(flag, value)
+        end)
+        
+        if success then
+            successCount = successCount + 1
+        else
+            failCount = failCount + 1
+        end
+    end
+    
+    print("=" .. string.rep("=", 60))
+    print("✅ FFlags Aplicadas: " .. successCount)
+    print("❌ FFlags Falharam: " .. failCount)
+    print("📊 Total: " .. (successCount + failCount) .. " flags")
+    print("🎯 Sistema de otimização extrema ativado!")
+    print("=" .. string.rep("=", 60))
+end
+
+-- Aplicar as flags IMEDIATAMENTE
+pcall(applyOptimizationFlags)
+
+-- ========================================================================================
 -- APLICAR ANTI-LAG IMEDIATAMENTE (ANTES DE TUDO)
+-- ========================================================================================
 local function hideAllBrainrots()
     local scriptedMap = Workspace:WaitForChild("ScriptedMap", 5)
     local plots = Workspace:FindFirstChild("Plots")
