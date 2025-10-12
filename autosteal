@@ -1,0 +1,227 @@
+-- Script: Auto Steal VISUAL CORRIGIDO - Interface que funciona
+-- Versão que atualiza a interface visual corretamente
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+-- ========== CONFIGURAÇÕES ==========
+local DISTANCIA_COLETA = 9          -- Distância para detectar
+local DELAY_ENTRE_COLETAS = 0.0     -- Delay entre coletas (0 = instantâneo)
+local HOLD_DURATION = 0.0           -- Tempo para segurar E (0 = rápido)
+local INTERVALO_BUSCA = 1          -- Busca a cada 0.25 segundos (15 frames)
+local TECLA_TOGGLE = Enum.KeyCode.G  -- Tecla para ligar/desligar (G)
+-- ===================================
+
+local ultimaColeta = 0
+local contadorFrames = 0
+local autoStealAtivo = false  -- Começa desligado
+local statusLabel = nil  -- Referência direta ao label de status
+
+-- Função para pressionar E (SILENCIOSO)
+local function pressionarE_Silencioso()
+    pcall(function()
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+        task.wait(HOLD_DURATION)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+    end)
+end
+
+-- Função para encontrar brainrot próximo (SILENCIOSO)
+local function encontrarBrainrotProximo()
+    Character = LocalPlayer.Character
+    if not Character then return nil end
+    
+    HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+    if not HumanoidRootPart then return nil end
+    
+    local plots = Workspace:FindFirstChild("Plots")
+    if not plots then return nil end
+    
+    for _, plot in pairs(plots:GetChildren()) do
+        local animalPodiums = plot:FindFirstChild("AnimalPodiums")
+        
+        if animalPodiums then
+            for _, podium in pairs(animalPodiums:GetChildren()) do
+                local base = podium:FindFirstChild("Base")
+                if base then
+                    local spawn = base:FindFirstChild("Spawn")
+                    if spawn then
+                        local promptAttachment = spawn:FindFirstChild("PromptAttachment")
+                        if promptAttachment then
+                            local prompt = promptAttachment:FindFirstChild("ProximityPrompt")
+                            
+                            if prompt and prompt:IsA("ProximityPrompt") and prompt.Enabled then
+                                if prompt.ActionText == "Steal" and prompt.KeyboardKeyCode == Enum.KeyCode.E then
+                                    local distancia = (HumanoidRootPart.Position - spawn.Position).Magnitude
+                                    
+                                    if distancia <= DISTANCIA_COLETA then
+                                        return {
+                                            prompt = prompt,
+                                            distancia = distancia,
+                                            nome = prompt.ObjectText,
+                                            spawn = spawn
+                                        }
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    return nil
+end
+
+-- Função para criar interface visual SIMPLES
+local function criarInterface()
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "AutoStealGUI"
+    gui.Parent = LocalPlayer.PlayerGui
+    
+    -- Frame principal simples
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 200, 0, 40)
+    frame.Position = UDim2.new(0, 10, 0, 10)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BackgroundTransparency = 0.3
+    frame.BorderSizePixel = 0
+    frame.Parent = gui
+    
+    -- Bordas arredondadas
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    
+    -- Título
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 20)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Text = "Auto Steal"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextScaled = true
+    title.Font = Enum.Font.GothamBold
+    title.Parent = frame
+    
+    -- Status com bolinha
+    statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(1, 0, 0, 20)
+    statusLabel.Position = UDim2.new(0, 0, 0, 20)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = "● DESLIGADO"
+    statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    statusLabel.TextScaled = true
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.Parent = frame
+    
+    return gui
+end
+
+-- Função para atualizar interface visual
+local function atualizarInterface()
+    if statusLabel then
+        if autoStealAtivo then
+            statusLabel.Text = "● LIGADO"
+            statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+        else
+            statusLabel.Text = "● DESLIGADO"
+            statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
+    end
+end
+
+-- Função para toggle (ligar/desligar)
+local function toggleAutoSteal()
+    autoStealAtivo = not autoStealAtivo
+    
+    if autoStealAtivo then
+        print("[AutoSteal] ✅ LIGADO! Pressione", TECLA_TOGGLE.Name, "novamente para desligar")
+    else
+        print("[AutoSteal] ❌ DESLIGADO! Pressione", TECLA_TOGGLE.Name, "para ligar")
+    end
+    
+    -- Atualiza interface visual
+    atualizarInterface()
+end
+
+-- Loop principal (COM TOGGLE)
+RunService.RenderStepped:Connect(function()
+    -- Só funciona se autoStealAtivo = true
+    if not autoStealAtivo then
+        return
+    end
+    
+    contadorFrames = contadorFrames + 1
+    
+    -- Busca brainrots a cada INTERVALO_BUSCA frames (0.25 segundos)
+    if contadorFrames >= INTERVALO_BUSCA then
+        contadorFrames = 0
+        
+        local brainrot = encontrarBrainrotProximo()
+        
+        if brainrot then
+            local tempoAtual = tick()
+            
+            -- Só verifica se passou o delay
+            if tempoAtual - ultimaColeta >= DELAY_ENTRE_COLETAS then
+                -- Tenta fireproximityprompt primeiro
+                local sucesso = pcall(function()
+                    fireproximityprompt(brainrot.prompt, HOLD_DURATION)
+                end)
+                
+                if not sucesso then
+                    -- Se falhar, tenta VirtualInput
+                    pressionarE_Silencioso()
+                end
+                
+                ultimaColeta = tempoAtual
+            end
+        end
+    end
+end)
+
+-- Detectar tecla de toggle
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == TECLA_TOGGLE then
+        toggleAutoSteal()
+    end
+end)
+
+-- Atualizar personagem
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+end)
+
+-- Criar interface visual
+criarInterface()
+
+-- Mensagem inicial
+print("===========================================")
+print("[AutoSteal] 🎮 MODO VISUAL CORRIGIDO!")
+print("===========================================")
+print("⚙️ Configurações:")
+print("   • Distância:", DISTANCIA_COLETA, "studs")
+print("   • Hold Duration:", HOLD_DURATION, "s")
+print("   • Delay:", DELAY_ENTRE_COLETAS, "s")
+print("   • Intervalo:", INTERVALO_BUSCA, "frames (0.25s)")
+print("   • Tecla Toggle:", TECLA_TOGGLE.Name)
+print("===========================================")
+print("🎮 Controles:")
+print("   Pressione", TECLA_TOGGLE.Name, "para LIGAR/DESLIGAR")
+print("   Status atual: DESLIGADO ❌")
+print("   📱 Interface visual CORRIGIDA na tela!")
+print("   🔴 Bolinha vermelha = DESLIGADO")
+print("   🟢 Bolinha verde = LIGADO")
+print("===========================================")
